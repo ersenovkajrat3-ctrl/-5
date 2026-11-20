@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Калькулятор расхода строительных материалов и услуг</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d0f;
+  --bg-2:#121216;
+  --surface:#17171c;
+  --surface-2:#1d1d23;
+  --line:#2b2b32;
+  --line-soft:#232329;
+  --ink:#f3efe6;
+  --ink-2:#c8c4ba;
+  --muted:#8f8b82;
+  --gold:#cfa24a;
+  --gold-bright:#e6c169;
+  --gold-deep:#9c7526;
+  --danger:#e0655a;
+  --ok:#7fb886;
+  --r:14px;
+  --r-sm:10px;
+  --shadow:0 18px 44px -20px rgba(0,0,0,.75);
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+*{-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;
+  background:
+    radial-gradient(1100px 620px at 82% -8%, rgba(207,162,74,.13), transparent 60%),
+    radial-gradient(760px 520px at -10% 4%, rgba(207,162,74,.06), transparent 55%),
+    var(--bg);
+  color:var(--ink);
+  font-family:"Inter",system-ui,Segoe UI,Roboto,Arial,sans-serif;
+  font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  min-height:100svh;
+}
+::selection{background:rgba(207,162,74,.32);color:#fff}
+a{color:var(--gold-bright);text-decoration:none}
+h1,h2,h3{margin:0;font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.01em;line-height:1.05}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* ===== Header ===== */
+header{
+  position:sticky;top:0;z-index:40;
+  background:rgba(13,13,15,.82);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);
+  backdrop-filter:saturate(140%) blur(12px);
+  border-bottom:1px solid var(--line-soft);
+}
+.bar{display:flex;align-items:center;gap:18px;padding-top:max(14px,env(safe-area-inset-top));padding-bottom:14px}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}
+.logo{
+  width:46px;height:46px;flex:none;border-radius:11px;
+  background:linear-gradient(150deg,#1c1c22,#101014);
+  border:1px solid var(--line);
+  display:grid;place-items:center;position:relative;overflow:hidden;
+}
+.logo::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 60% at 30% 20%,rgba(230,193,105,.22),transparent 70%)}
+.logo svg{width:26px;height:26px;position:relative;z-index:1}
+.brand .name{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.06em;line-height:1;text-transform:uppercase;color:var(--ink)}
+.brand .name b{color:var(--gold)}
+.brand .sub{font-size:11.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.bar .spacer{flex:1}
+.tag{
+  display:none;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:var(--surface);
+  letter-spacing:.04em;
+}
+.tag .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px rgba(207,162,74,.18)}
+@media(min-width:900px){.tag{display:inline-flex}}
+
+/* ===== Tabs ===== */
+nav.tabs{position:sticky;top:calc(74px + env(safe-area-inset-top));z-index:35;background:rgba(13,13,15,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft)}
+.tabrow{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none;padding-top:9px;padding-bottom:9px}
+.tabrow::-webkit-scrollbar{display:none}
+.tab{
+  flex:none;display:flex;align-items:center;gap:10px;cursor:pointer;
+  font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-2);background:transparent;border:1px solid transparent;border-radius:999px;
+  padding:11px 18px;min-height:44px;transition:color .25s var(--ease),background .25s var(--ease),border-color .25s var(--ease);white-space:nowrap;
+}
+.tab:active{transform:scale(.97)}
+.tab svg{width:19px;height:19px;opacity:.85;transition:opacity .25s}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:#141013;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border-color:var(--gold-deep);box-shadow:0 8px 20px -10px rgba(207,162,74,.6)}
+.tab[aria-selected="true"] svg{opacity:1}
+.tab-sep{flex:none;width:1px;margin:8px 6px;background:var(--line)}
+
+/* ===== Hero strip ===== */
+.hero{padding:34px 0 8px}
+.hero .kline{width:54px;height:3px;background:linear-gradient(90deg,var(--gold),transparent);border-radius:3px;margin-bottom:16px}
+.hero h1{font-size:clamp(29px,5vw,50px);font-weight:700;text-transform:uppercase;text-wrap:balance;max-width:16ch;overflow-wrap:anywhere}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero p{color:var(--ink-2);max-width:60ch;margin:14px 0 0;font-size:15.5px}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+.badge svg{width:15px;height:15px;color:var(--gold)}
+
+/* ===== Layout ===== */
+.panel-grid{display:grid;grid-template-columns:1fr;gap:22px;padding:26px 0 60px;align-items:start}
+@media(min-width:940px){.panel-grid{grid-template-columns:1.35fr .95fr}}
+section.calc{display:none}
+section.calc.active{display:block;animation:rise .45s var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card .head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line-soft)}
+.card .head .ic{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;background:rgba(207,162,74,.1);border:1px solid rgba(207,162,74,.28);color:var(--gold-bright)}
+.card .head .ic svg{width:19px;height:19px}
+.card .head h2{font-size:19px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;min-width:0;overflow-wrap:anywhere}
+.card .head .hint{margin-left:auto;font-size:12px;color:var(--muted)}
+.card .body{padding:20px 22px}
+
+/* form */
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{cursor:pointer;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:10px 15px;min-height:44px;display:inline-flex;align-items:center;transition:all .2s var(--ease)}
+.chip:active{transform:scale(.97)}
+@media(hover:hover){.chip:hover{border-color:var(--gold-deep);color:var(--ink)}}
+.chip.on{background:rgba(207,162,74,.14);border-color:var(--gold);color:var(--gold-bright)}
+
+.field{margin-bottom:16px}
+.field.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:7px;letter-spacing:.02em}
+label .u{color:var(--muted)}
+.inp{position:relative;display:flex;align-items:center}
+.inp input,.inp select{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);
+  color:var(--ink);font:600 16px/1.2 "Inter",sans-serif;font-variant-numeric:tabular-nums;
+  padding:12px 14px;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;
+}
+.inp input[type=number]::-webkit-inner-spin-button,.inp input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.inp input[type=number]{-moz-appearance:textfield}
+.inp select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23cfa24a' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;cursor:pointer}
+.inp input:focus,.inp select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,162,74,.16)}
+.inp .suffix{position:absolute;right:14px;font-size:13px;color:var(--muted);pointer-events:none;font-family:"JetBrains Mono",monospace}
+.inp.has-suffix input{padding-right:52px}
+
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:600 12.5px/1 "Inter";padding:12px 16px;min-height:44px;border-radius:999px;cursor:pointer;transition:all .2s}
+.seg button:active{transform:scale(.97)}
+.seg button.on{background:var(--surface-2);color:var(--gold-bright);box-shadow:inset 0 0 0 1px var(--line)}
+.seg.zones button{min-width:44px;padding:12px 0;font-family:"JetBrains Mono",monospace;font-size:14px}
+.seg.zones button.on{color:#141013;background:linear-gradient(180deg,var(--gold-bright),var(--gold));box-shadow:none}
+
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.note.warn{color:var(--danger)}
+.note b{color:var(--ink-2)}
+.divider{height:1px;background:var(--line-soft);margin:20px 0}
+
+.z-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.z-row .seg button.on{color:#141013;background:linear-gradient(180deg,var(--gold-bright),var(--gold));box-shadow:none}
+
+.check{display:flex;align-items:flex-start;gap:11px;font-size:13.5px;color:var(--ink-2);cursor:pointer;padding:9px 0;margin:0;line-height:1.4}
+.check input{width:20px;height:20px;flex:none;margin:0;accent-color:var(--gold);cursor:pointer}
+.maplinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.maplinks .chip{text-decoration:none}
+
+/* positions (подъём, распил) */
+.pos{border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 14px 6px;margin-bottom:12px;background:rgba(0,0,0,.18)}
+.pos-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pos-head .pn{font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-bright)}
+.pos-del{background:none;border:0;color:var(--muted);font:500 12.5px "Inter";cursor:pointer;min-height:36px;padding:0 4px}
+@media(hover:hover){.pos-del:hover{color:var(--danger)}}
+.pos .field{margin-bottom:12px}
+.pos .l-sum,.pos .s-sum{margin:2px 0 8px;font-family:"JetBrains Mono",monospace;font-size:12px}
+.pos .l-sum b,.pos .s-sum b{color:var(--gold-bright)}
+
+/* ===== Result ===== */
+.result{position:sticky;top:132px}
+.result .card .body{padding:22px}
+.big{display:flex;align-items:flex-end;gap:14px;padding:6px 0 4px}
+.big .num{font-family:"Oswald",sans-serif;font-weight:700;font-size:clamp(48px,9vw,72px);line-height:.9;color:var(--gold-bright);letter-spacing:-.01em}
+.big .unit{font-family:"Oswald",sans-serif;font-size:20px;text-transform:uppercase;color:var(--ink-2);margin-bottom:9px;letter-spacing:.04em}
+.big.flash .num{animation:flash .5s var(--ease)}
+@keyframes flash{0%{color:#fff;text-shadow:0 0 22px rgba(230,193,105,.6)}100%{color:var(--gold-bright);text-shadow:none}}
+.subline{color:var(--ink-2);font-size:14px;margin-top:2px}
+.subline b{color:var(--ink)}
+
+.breakdown{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:6px}
+.brow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.brow:last-child{border-bottom:0}
+.brow .k{color:var(--muted);font-size:13.5px}
+.brow .v{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:14.5px;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.brow .v em{font-style:normal;color:var(--gold-bright)}
+
+.actions{display:flex;gap:9px;margin-top:20px}
+.btn{flex:1;cursor:pointer;font:600 13.5px/1 "Inter";letter-spacing:.02em;border-radius:var(--r-sm);padding:12px;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .2s var(--ease)}
+.btn svg{width:16px;height:16px}
+.btn.primary{background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:#141013;border:1px solid var(--gold-deep)}
+.btn.ghost{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.btn.add{width:100%;border-style:dashed}
+.btn:active{transform:scale(.98)}
+@media(hover:hover){
+  .btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--gold-deep)}
+}
+.copied{color:var(--ok)!important}
+
+.empty{color:var(--muted);font-size:14px;padding:8px 0 4px}
+
+/* ===== Reference ===== */
+.ref{margin:0 0 70px}
+.ref details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.ref summary{cursor:pointer;list-style:none;padding:18px 22px;display:flex;align-items:center;gap:12px;font-family:"Oswald";font-weight:500;font-size:17px;text-transform:uppercase;letter-spacing:.03em}
+.ref summary::-webkit-details-marker{display:none}
+.ref summary .arw{margin-left:auto;transition:transform .3s var(--ease);color:var(--gold)}
+.ref details[open] summary .arw{transform:rotate(180deg)}
+.ref .rc{padding:4px 22px 22px;overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
+.tbl th{color:var(--gold-bright);font-weight:600;font-family:"Oswald";text-transform:uppercase;letter-spacing:.03em;font-size:12.5px}
+.tbl td{color:var(--ink-2)}
+.tbl td.mono{color:var(--ink);font-family:"JetBrains Mono";font-variant-numeric:tabular-nums}
+.tbl tr:last-child td{border-bottom:0}
+
+footer{border-top:1px solid var(--line-soft);padding:30px 0 46px;padding-bottom:max(46px,env(safe-area-inset-bottom));color:var(--muted);font-size:13px}
+.foot{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:center;justify-content:space-between}
+.foot .fb{display:flex;align-items:center;gap:9px}
+.foot .fb svg{width:16px;height:16px;color:var(--gold)}
+.disc{margin-top:14px;font-size:12px;color:#6d6a63;max-width:80ch}
+
+@media(max-width:939px){.result{position:static}}
+@media(max-width:520px){.field.row{grid-template-columns:1fr}.field.row3{gap:8px}.field.row3 label{font-size:11.5px}}
+/* mobile: компактная шапка, липнет только меню */
+@media(max-width:700px){
+  header{position:static}
+  nav.tabs{top:0}
+  .bar{gap:12px;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:10px}
+  .logo{width:38px;height:38px;border-radius:10px}.logo svg{width:22px;height:22px}
+  .brand .name{font-size:17px}.brand .sub{font-size:10px;letter-spacing:.08em;white-space:nowrap}
+  .tabrow{gap:4px;padding-top:7px;padding-bottom:7px}
+  .tab{padding:9px 14px;min-height:40px;font-size:14px;gap:8px}.tab svg{width:17px;height:17px}
+  .hero{padding:18px 0 0}.hero .kline{margin-bottom:10px}
+  .hero h1{font-size:25px;max-width:none}
+  .hero p{font-size:13.5px;margin-top:8px;line-height:1.45}
+  .badges{display:none!important}
+  .panel-grid{padding:16px 0 40px;gap:16px}
+  .card .head{padding:14px 16px;gap:10px}.card .head h2{font-size:17px}
+  .card .body,.result .card .body{padding:16px}
+  .pos{padding:12px 12px 4px}
+  .seg{display:flex;width:100%}.seg button{flex:1 1 auto;padding:12px 10px}
+  .seg.zones button{flex:1 0 0;min-width:0}
+  .ref summary{padding:16px}.ref .rc{padding:4px 16px 16px}
+}
+
+/* ===== Видео-инструкция ===== */
+.vbtn{display:inline-flex;align-items:center;gap:9px;flex:none;cursor:pointer;font:600 13px/1 "Inter",system-ui,sans-serif;letter-spacing:.02em;color:#141013;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border:1px solid var(--gold-deep);border-radius:999px;padding:10px 16px 10px 12px;min-height:42px;box-shadow:0 8px 20px -12px rgba(207,162,74,.7);transition:filter .2s,transform .2s}
+.vbtn .pl{width:22px;height:22px;border-radius:50%;background:#141013;display:grid;place-items:center}
+.vbtn .pl svg{width:10px;height:10px;margin-left:2px}
+.vbtn:active{transform:scale(.97)}
+@media(hover:hover){.vbtn:hover{filter:brightness(1.06)}}
+.vmodal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(5,5,7,.88);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.vmodal.open{display:flex}
+.vbox{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;max-width:100%}
+.vbox video{display:block;height:min(80vh,80svh,900px);max-width:calc(100vw - 32px);aspect-ratio:9/16;object-fit:contain;background:#000;border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.vtop{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.vtop b{font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.vclose{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+@media(max-width:700px){.vbtn{padding:9px 13px 9px 10px;font-size:12.5px;min-height:38px}.vbtn .t2{display:none}}
+@media print{.vbtn,.vmodal{display:none!important}}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+/* print */
+@media print{
+  header,nav.tabs,.hero,.presets,.actions,.ref,footer,.tag,.btn.add,.pos-del,.maplinks{display:none!important}
+  body{background:#fff;color:#000}
+  .panel-grid{grid-template-columns:1fr;padding:0}
+  .card{box-shadow:none;border:1px solid #999;break-inside:avoid}
+  section.calc:not(.active){display:none}
+  .big .num,.big .unit,.brow .v em{color:#000}
+  .card .head .ic{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 21V9.5L12 3l9 6.5V21" stroke="#e6c169" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 21h18" stroke="#e6c169" stroke-width="1.7" stroke-linecap="round"/><rect x="8.5" y="13" width="7" height="8" stroke="#cfa24a" stroke-width="1.4"/></svg>
+      </div>
+      <div>
+        <div class="name">ПРОФ<b>РАСЧЁТ</b></div>
+        <div class="sub">Материалы и услуги</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="tag"><span class="dot"></span>Инструмент для сотрудников магазина</div>
+    <button class="vbtn" id="vOpen" type="button" aria-haspopup="dialog"><span class="pl"><svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6z" fill="#e6c169"/></svg></span>Видео<span class="t2">-инструкция</span></button>
+  </div>
+</header>
+
+<div class="vmodal" id="vModal" role="dialog" aria-modal="true" aria-label="Видео-инструкция">
+  <div class="vbox">
+    <div class="vtop"><b>Как пользоваться калькулятором</b><button class="vclose" id="vClose" type="button" aria-label="Закрыть">×</button></div>
+    <video id="vPlayer" controls playsinline preload="none" poster="/video/instrukciya-poster.jpg">
+      <source src="/video/instrukciya.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<nav class="tabs">
+  <div class="wrap tabrow" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="mix">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 6-4.5 12H7.5L3 9l3-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 9h15" stroke="currentColor" stroke-width="1.5"/></svg>
+      Сухие смеси
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="tile">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+      Плитка
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="ins">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 7c3 2 5 2 9 0s6-2 9 0M3 12c3 2 5 2 9 0s6-2 9 0M3 17c3 2 5 2 9 0s6-2 9 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Утеплитель
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="roll">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M17 7a3 3 0 0 1 0 10" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h6M7 12h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Рулонные материалы
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="arm">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M9 4v16M15 4v16M3 9.33h18M3 14.66h18" stroke="currentColor" stroke-width="1.2"/></svg>
+      Потолок Армстронг
+    </button>
+    <span class="tab-sep" aria-hidden="true"></span>
+    <button class="tab" role="tab" aria-selected="false" data-tab="dlv">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M2 6h11v10H2zM13 9h4l3 3.5V16h-7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="6" cy="17.5" r="1.8" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="17.5" r="1.8" stroke="currentColor" stroke-width="1.5"/></svg>
+      Доставка
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="lift">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 20h5v-5h5v-5h5V5h3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      Подъём
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="saw">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M3 17 16 4l4 4L7 21H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.5 13.5l2 2M9.5 10.5l2 2M12.5 7.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Распил
+    </button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="kline"></div>
+    <h1 id="heroTitle">Расход <em>сухих смесей</em> на квадратный метр</h1>
+    <p id="heroText">Быстрый расчёт количества мешков для клиента прямо на прилавке. Выберите материал, укажите площадь и толщину слоя, добавьте запас, распечатайте.</p>
+    <div class="badges" id="heroBadges">
+      <span class="badge"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Округление до целых упаковок</span>
+      <span class="badge"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Запас на подрезку и потери</span>
+      <span class="badge"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h8v4H8z" stroke="currentColor" stroke-width="1.4"/></svg>Печать расчёта клиенту</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="panel-grid">
+
+  <!-- ============ MIX ============ -->
+  <section class="calc active" id="tab-mix">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 6-4.5 12H7.5L3 9l3-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+        <h2>Параметры расчёта</h2>
+        <span class="hint">на 1 мм слоя</span>
+      </div>
+      <div class="body">
+        <div class="presets" id="mixPresets"></div>
+
+        <div class="field">
+          <label>Тип смеси</label>
+          <div class="inp"><select id="mixType"></select></div>
+          <div class="note" id="mixNote"></div>
+        </div>
+
+        <div class="field">
+          <label>Площадь поверхности</label>
+          <div class="seg" id="mixAreaMode" style="margin-bottom:10px">
+            <button class="on" data-m="direct">Ввести площадь</button>
+            <button data-m="dims">По размерам</button>
+          </div>
+          <div id="mixAreaDirect">
+            <div class="inp has-suffix"><input id="mixArea" type="number" min="0" step="0.1" value="20"><span class="suffix">м²</span></div>
+          </div>
+          <div id="mixAreaDims" style="display:none">
+            <div class="field row" style="margin-bottom:10px">
+              <div><label>Длина <span class="u">м</span></label><div class="inp"><input id="mixLen" type="number" min="0" step="0.1" value="5"></div></div>
+              <div><label>Высота / ширина <span class="u">м</span></label><div class="inp"><input id="mixHt" type="number" min="0" step="0.1" value="2.7"></div></div>
+            </div>
+            <div class="inp has-suffix"><input id="mixDeduct" type="number" min="0" step="0.1" value="0"><span class="suffix">м²</span></div>
+            <div class="note">Вычесть проёмы (окна, двери).</div>
+          </div>
+        </div>
+
+        <div class="field row">
+          <div>
+            <label>Толщина слоя <span class="u">мм</span></label>
+            <div class="inp has-suffix"><input id="mixThick" type="number" min="0" step="0.5" value="10"><span class="suffix">мм</span></div>
+          </div>
+          <div>
+            <label>Норма расхода <span class="u">кг/м² на 1 мм</span></label>
+            <div class="inp has-suffix"><input id="mixNorm" type="number" min="0" step="0.05" value="0.85"><span class="suffix">кг</span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Фасовка (вес мешка) <span class="u">кг</span></label>
+          <div class="inp has-suffix"><input id="mixBag" type="number" min="1" step="1" value="30"><span class="suffix">кг</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="z-row">
+          <label style="margin:0">Запас</label>
+          <div class="seg" id="mixZapas">
+            <button data-z="0">0%</button>
+            <button class="on" data-z="10">10%</button>
+            <button data-z="15">15%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INSULATION ============ -->
+  <section class="calc" id="tab-ins">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7c3 2 5 2 9 0s6-2 9 0M3 12c3 2 5 2 9 0s6-2 9 0M3 17c3 2 5 2 9 0s6-2 9 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        <h2>Минеральный утеплитель</h2>
+        <span class="hint">плиты и рулоны</span>
+      </div>
+      <div class="body">
+        <div class="field">
+          <label>Форма выпуска</label>
+          <div class="seg" id="insFormat">
+            <button class="on" data-f="plate">Плиты</button>
+            <button data-f="roll">Рулон / мат</button>
+          </div>
+        </div>
+
+        <div class="presets" id="insPlatePresets"></div>
+        <div class="presets" id="insRollPresets" style="display:none"></div>
+
+        <div class="field">
+          <label>Что утепляем</label>
+          <div class="seg" id="insTarget">
+            <button class="on" data-t="wall">Стены</button>
+            <button data-t="roof">Кровля / чердак</button>
+          </div>
+          <div class="note" id="insNote"></div>
+        </div>
+
+        <div class="field">
+          <label>Площадь утепления <span class="u">м²</span></label>
+          <div class="inp has-suffix"><input id="insArea" type="number" min="0" step="0.1" value="50"><span class="suffix">м²</span></div>
+        </div>
+
+        <div class="field">
+          <label>Требуемая толщина утепления <span class="u">мм</span></label>
+          <div class="inp has-suffix"><input id="insReq" type="number" min="0" step="10" value="100"><span class="suffix">мм</span></div>
+          <div class="note" id="insLayerNote"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="insPlateBlock">
+          <label style="margin-bottom:10px;display:block">Плита утеплителя</label>
+          <div class="field row">
+            <div><label>Длина <span class="u">мм</span></label><div class="inp"><input id="insL" type="number" min="1" step="10" value="1200"></div></div>
+            <div><label>Ширина <span class="u">мм</span></label><div class="inp"><input id="insW" type="number" min="1" step="10" value="600"></div></div>
+          </div>
+          <div class="field row">
+            <div><label>Толщина плиты <span class="u">мм</span></label><div class="inp"><input id="insT" type="number" min="1" step="10" value="50"></div></div>
+            <div><label>Плит в упаковке <span class="u">шт</span></label><div class="inp"><input id="insPer" type="number" min="1" step="1" value="8"></div></div>
+          </div>
+        </div>
+
+        <div id="insRollBlock" style="display:none">
+          <label style="margin-bottom:10px;display:block">Рулон / мат</label>
+          <div class="field row">
+            <div><label>Площадь в упаковке <span class="u">м²</span></label><div class="inp has-suffix"><input id="insRollArea" type="number" min="0.1" step="0.1" value="10"><span class="suffix">м²</span></div></div>
+            <div><label>Толщина рулона <span class="u">мм</span></label><div class="inp has-suffix"><input id="insRollThick" type="number" min="1" step="10" value="50"><span class="suffix">мм</span></div></div>
+          </div>
+          <div class="note">Площадь и толщина указаны на упаковке. «Твин» — двойной слой, толщину указывайте суммарную (напр. 100 мм).</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="z-row">
+          <label style="margin:0">Запас</label>
+          <div class="seg" id="insZapas">
+            <button data-z="0">0%</button>
+            <button class="on" data-z="5">5%</button>
+            <button data-z="10">10%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROLLED ============ -->
+  <section class="calc" id="tab-roll">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M17 7a3 3 0 0 1 0 10" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        <h2>Рулонные материалы</h2>
+        <span class="hint">рулоны</span>
+      </div>
+      <div class="body">
+        <div class="presets" id="rollPresets"></div>
+
+        <div class="field">
+          <label>Площадь покрытия <span class="u">м²</span></label>
+          <div class="inp has-suffix"><input id="rollArea" type="number" min="0" step="0.1" value="60"><span class="suffix">м²</span></div>
+        </div>
+
+        <div class="field row">
+          <div><label>Ширина рулона <span class="u">м</span></label><div class="inp"><input id="rollW" type="number" min="0.1" step="0.05" value="1.6"></div></div>
+          <div><label>Длина рулона <span class="u">м</span></label><div class="inp"><input id="rollLen" type="number" min="0.1" step="0.5" value="43.75"></div></div>
+        </div>
+
+        <div class="field row">
+          <div>
+            <label>Нахлёст <span class="u">см</span></label>
+            <div class="inp has-suffix"><input id="rollLap" type="number" min="0" step="1" value="10"><span class="suffix">см</span></div>
+          </div>
+          <div>
+            <label>Количество слоёв</label>
+            <div class="inp"><select id="rollLayers"><option>1</option><option>2</option><option>3</option></select></div>
+          </div>
+        </div>
+        <div class="note" id="rollNote"></div>
+
+        <div class="divider"></div>
+        <div class="z-row">
+          <label style="margin:0">Запас</label>
+          <div class="seg" id="rollZapas">
+            <button data-z="0">0%</button>
+            <button class="on" data-z="10">10%</button>
+            <button data-z="15">15%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TILE ============ -->
+  <section class="calc" id="tab-tile">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        <h2>Плитка и керамогранит</h2>
+        <span class="hint">штуки, упаковки</span>
+      </div>
+      <div class="body">
+        <div class="presets" id="tilePresets"></div>
+
+        <div class="field">
+          <label>Площадь укладки</label>
+          <div class="seg" id="tileAreaMode" style="margin-bottom:10px">
+            <button class="on" data-m="direct">Ввести площадь</button>
+            <button data-m="dims">По размерам</button>
+          </div>
+          <div id="tileAreaDirect">
+            <div class="inp has-suffix"><input id="tileArea" type="number" min="0" step="0.1" value="10"><span class="suffix">м²</span></div>
+          </div>
+          <div id="tileAreaDims" style="display:none">
+            <div class="field row" style="margin-bottom:10px">
+              <div><label>Длина <span class="u">м</span></label><div class="inp"><input id="tileLen" type="number" min="0" step="0.1" value="4"></div></div>
+              <div><label>Ширина / высота <span class="u">м</span></label><div class="inp"><input id="tileHt" type="number" min="0" step="0.1" value="2.7"></div></div>
+            </div>
+            <div class="inp has-suffix"><input id="tileDeduct" type="number" min="0" step="0.1" value="0"><span class="suffix">м²</span></div>
+            <div class="note">Вычесть проёмы (окна, двери, ниши).</div>
+          </div>
+        </div>
+
+        <label style="margin-bottom:10px;display:block">Размер плитки</label>
+        <div class="field row">
+          <div><label>Сторона A <span class="u">мм</span></label><div class="inp"><input id="tileA" type="number" min="1" step="10" value="300"></div></div>
+          <div><label>Сторона B <span class="u">мм</span></label><div class="inp"><input id="tileB" type="number" min="1" step="10" value="300"></div></div>
+        </div>
+
+        <div class="field">
+          <label>Плиток в упаковке <span class="u">шт</span></label>
+          <div class="inp has-suffix"><input id="tilePer" type="number" min="1" step="1" value="11"><span class="suffix">шт</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="z-row">
+          <label style="margin:0">Запас на подрезку</label>
+          <div class="seg" id="tileZapas">
+            <button data-z="5">5%</button>
+            <button class="on" data-z="10">10%</button>
+            <button data-z="15">15%</button>
+          </div>
+        </div>
+        <div class="note">Прямая укладка — 10 %, по диагонали или со сложной раскладкой — 15 %.</div>
+
+        <div class="divider"></div>
+        <label style="margin-bottom:10px;display:block">Плиточный клей <span class="u" style="color:var(--muted)">(по желанию)</span></label>
+        <div class="field row">
+          <div><label>Норма клея <span class="u">кг/м²</span></label><div class="inp has-suffix"><input id="tileGlue" type="number" min="0" step="0.5" value="5"><span class="suffix">кг</span></div></div>
+          <div><label>Вес мешка <span class="u">кг</span></label><div class="inp has-suffix"><input id="tileGlueBag" type="number" min="1" step="1" value="25"><span class="suffix">кг</span></div></div>
+        </div>
+        <div class="note">Расход зависит от зубчатого шпателя и формата: 3–4 кг/м² (мелкая) … 6–8 кг/м² (крупноформат). Норму «0» — не считать.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARMSTRONG ============ -->
+  <section class="calc" id="tab-arm">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M9 4v16M15 4v16M3 9.33h18M3 14.66h18" stroke="currentColor" stroke-width="1.2"/></svg></span>
+        <h2>Потолок Армстронг</h2>
+        <span class="hint">плиты и каркас</span>
+      </div>
+      <div class="body">
+        <div class="presets" id="armPresets"></div>
+
+        <div class="field row">
+          <div><label>Длина помещения <span class="u">м</span></label><div class="inp"><input id="armLen" type="number" min="0" step="0.1" value="6"></div></div>
+          <div><label>Ширина помещения <span class="u">м</span></label><div class="inp"><input id="armWid" type="number" min="0" step="0.1" value="4"></div></div>
+        </div>
+        <div class="note" id="armGeo"></div>
+
+        <div class="divider"></div>
+        <label style="margin-bottom:10px;display:block">Нормы на 1 м² <span class="u" style="color:var(--muted)">(можно изменить)</span></label>
+        <div class="field row">
+          <div><label>Плита 600×600 <span class="u">шт/м²</span></label><div class="inp"><input id="armPlate" type="number" min="0" step="0.01" value="2.78"></div></div>
+          <div><label>Плит в упаковке <span class="u">шт</span></label><div class="inp"><input id="armPer" type="number" min="1" step="1" value="16"></div></div>
+        </div>
+        <div class="field row">
+          <div><label>Профиль 3,7 м <span class="u">шт/м²</span></label><div class="inp"><input id="armMain" type="number" min="0" step="0.01" value="0.23"></div></div>
+          <div><label>Профиль 1,2 м <span class="u">шт/м²</span></label><div class="inp"><input id="armT12" type="number" min="0" step="0.01" value="1.17"></div></div>
+        </div>
+        <div class="field row">
+          <div><label>Профиль 0,6 м <span class="u">шт/м²</span></label><div class="inp"><input id="armT06" type="number" min="0" step="0.01" value="2.3"></div></div>
+          <div><label>Подвес <span class="u">шт/м²</span></label><div class="inp"><input id="armHang" type="number" min="0" step="0.01" value="0.7"></div></div>
+        </div>
+        <div class="field">
+          <label>Пристенный уголок <span class="u">длина хлыста, м</span></label>
+          <div class="inp has-suffix"><input id="armAngle" type="number" min="0.1" step="0.1" value="3"><span class="suffix">м</span></div>
+          <div class="note">Считается по периметру помещения.</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="z-row">
+          <label style="margin:0">Запас на плиту</label>
+          <div class="seg" id="armZapas">
+            <button data-z="0">0%</button>
+            <button class="on" data-z="5">5%</button>
+            <button data-z="10">10%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DELIVERY ============ -->
+  <section class="calc" id="tab-dlv">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M2 6h11v10H2zM13 9h4l3 3.5V16h-7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="6" cy="17.5" r="1.8" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="17.5" r="1.8" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        <h2>Доставка со склада</h2>
+        <span class="hint">Саратов · Энгельс · межгород</span>
+      </div>
+      <div class="body">
+        <div class="field">
+          <label>Склад отгрузки</label>
+          <div class="seg" id="dlvWh">
+            <button class="on" data-w="pp">Пугачевский</button>
+            <button data-w="nash">НАШ</button>
+            <button data-w="les">Лесозаводская</button>
+          </div>
+          <div class="note" id="dlvWhNote"></div>
+          <div class="maplinks">
+            <a class="chip" id="dlvMap" target="_blank" rel="noopener">Карта зон склада ↗</a>
+            <a class="chip" id="dlvMapAll" target="_blank" rel="noopener">Общая карта зон ↗</a>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Куда везём</label>
+          <div class="seg" id="dlvKind">
+            <button class="on" data-k="city">По городу (зоны)</button>
+            <button data-k="inter">Межгород / область</button>
+          </div>
+        </div>
+
+        <div id="dlvCityBlock">
+          <div class="field">
+            <label>Зона доставки</label>
+            <div class="seg zones" id="dlvZone">
+              <button class="on" data-z="1">1</button><button data-z="2">2</button><button data-z="3">3</button><button data-z="4">4</button><button data-z="5">5</button><button data-z="6">6</button><button data-z="7">7</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Дальше последней зоны <span class="u">км от границы зоны</span></label>
+            <div class="inp has-suffix"><input id="dlvOver" type="number" min="0" step="1" value="0"><span class="suffix">км</span></div>
+            <div class="note">Если адрес дальше 7-й зоны (по Энгельсу с Лесозаводской — дальше 4-й), но ближе 100 км: цена этой зоны + километры от её границы по тарифу межгорода.</div>
+          </div>
+        </div>
+
+        <div id="dlvInterBlock" style="display:none">
+          <div class="field">
+            <label>Расстояние от склада до точки выгрузки <span class="u">км</span></label>
+            <div class="inp has-suffix"><input id="dlvKm" type="number" min="0" step="1" value="50"><span class="suffix">км</span></div>
+            <div class="note">Считается по Яндекс Картам от склада отгрузки. Цена = подача машины + км × тариф. Межгород принимается по согласованию с диспетчером или в течение двух суток.</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="field row">
+          <div><label>Вес груза <span class="u">кг</span></label><div class="inp has-suffix"><input id="dlvKg" type="number" min="0" step="10" value="800"><span class="suffix">кг</span></div></div>
+          <div><label>Объём груза <span class="u">м³</span></label><div class="inp has-suffix"><input id="dlvVol" type="number" min="0" step="0.1" value="2"><span class="suffix">м³</span></div></div>
+        </div>
+        <div class="field">
+          <label>Машина <span class="u">подбирается по весу и объёму, можно сменить</span></label>
+          <div class="seg" id="dlvCar">
+            <button class="on" data-c="s15">6,48 м³ · до 1,5 т</button>
+            <button data-c="s20">6,48 м³ · 1,5–2 т</button>
+            <button data-c="b20">13 м³ · до 2 т</button>
+          </div>
+          <div class="note" id="dlvCarNote"></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="field">
+          <label>Форма оплаты</label>
+          <div class="seg" id="dlvPay">
+            <button class="on" data-p="uk">Наличные по УК</button>
+            <button data-p="bn">Б/нал, эквайринг, чек</button>
+          </div>
+          <div class="note">Физлицам стараемся оформлять по УК за наличные — это самая выгодная цена. Услуга выписывается отдельным документом по «Управляющей Компании».</div>
+        </div>
+        <div class="field">
+          <label>Время доставки</label>
+          <div class="seg" id="dlvTime">
+            <button class="on" data-t="day">8:00–19:00</button>
+            <button data-t="eve">19–21 · ×1,5</button>
+            <button data-t="night">21–8 · ×2</button>
+          </div>
+          <label class="check"><input type="checkbox" id="dlvExact">К определённому времени (например, 15:00–15:30) — +50 %, грузится вне очереди</label>
+          <label class="check"><input type="checkbox" id="dlvKc">Заказ через контакт-центр — 790 ₽ до 2-й зоны (до 1,5 т и 6,48 м³, по УК)</label>
+        </div>
+        <div class="field row">
+          <div><label>Ходок машины</label><div class="inp"><input id="dlvTrips" type="number" min="1" step="1" value="1"></div></div>
+          <div><label>Простой сверх нормы <span class="u">мин</span></label><div class="inp has-suffix"><input id="dlvIdle" type="number" min="0" step="5" value="0"><span class="suffix">мин</span></div></div>
+        </div>
+        <div class="note">Норма выгрузки: до 1500 кг — 30 мин, до 3000 кг — 40 мин, до 10 000 кг — 60 мин. Сверх нормы — 15 ₽/мин. Выгрузка силами покупателя (в частном секторе — у ворот). Водитель ждёт клиента 30 мин.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LIFT ============ -->
+  <section class="calc" id="tab-lift">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 20h5v-5h5v-5h5V5h3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <h2>Разгрузка и подъём на этаж</h2>
+        <span class="hint">1,1 ₽ × кг × этаж</span>
+      </div>
+      <div class="body">
+        <div id="liftList"></div>
+        <button class="btn ghost add" id="liftAdd" type="button">+ Добавить позицию</button>
+
+        <div class="divider"></div>
+        <label class="check"><input type="checkbox" id="liftTech">Есть технический этаж (лифт идёт со 2-го) — +1 этаж вручную</label>
+        <div class="field" style="margin-top:10px">
+          <label>Оплата</label>
+          <div class="seg" id="liftPay">
+            <button class="on" data-p="uk">Наличные по УК</button>
+            <button data-p="ip">В стоимость товара · +55 %</button>
+          </div>
+        </div>
+        <div class="note">Подъём — только вместе с доставкой по Саратову и Энгельсу, на следующий день или позже, до 18:00, 100 % предоплата. Уточните у клиента лифт (пассажирский / грузовой), технический этаж и сможет ли машина подъехать к подъезду. ГКЛ, профиль, брус, фанера, линолеум — только вручную, если нет грузового лифта, куда они влезут. ДСП 1,7×3,5 — только распиленной.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SAW ============ -->
+  <section class="calc" id="tab-saw">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17 16 4l4 4L7 21H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.5 13.5l2 2M9.5 10.5l2 2M12.5 7.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+        <h2>Распил листовых материалов</h2>
+        <span class="hint">цена за рез</span>
+      </div>
+      <div class="body">
+        <div class="note" style="margin:0 0 14px">Сначала нарисуйте эскиз и посчитайте резы. Указывайте <b>все</b> резы по <b>всем</b> листам этого материала: продольные — вдоль длинной стороны, поперечные — поперёк.</div>
+        <div id="sawList"></div>
+        <button class="btn ghost add" id="sawAdd" type="button">+ Добавить материал</button>
+
+        <div class="divider"></div>
+        <div class="field">
+          <label>Оплата</label>
+          <div class="seg" id="sawPay">
+            <button class="on" data-p="uk">Наличные по УК</button>
+            <button data-p="ip">В стоимость товара · +55 %</button>
+          </div>
+        </div>
+        <div class="note">Склады: Лесозаводская, Пугачевский, Ново-Астраханское шоссе. Только по УК за наличные, 100 % предоплата. Допуск по размеру и кромке — до 1 см, кромка не шлифуется, пилим только под прямым углом. Склад начинает в течение часа после получения бланка; бланк подписывают покупатель и продавец.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <aside class="result">
+    <div class="card">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6M12 3v4M5 21a7 7 0 0 1 14 0M8 12h8M8 16h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        <h2 id="rHead">К продаже</h2>
+      </div>
+      <div class="body">
+        <div class="big" id="rBig">
+          <span class="num" id="rNum">0</span>
+          <span class="unit" id="rUnit">шт</span>
+        </div>
+        <div class="subline" id="rSub">Заполните параметры расчёта.</div>
+
+        <div class="breakdown" id="rBreak"></div>
+
+        <div class="actions">
+          <button class="btn primary" id="btnPrint">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v6H8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Печать
+          </button>
+          <button class="btn ghost" id="btnCopy">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="1.7"/></svg>Копировать
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+</div>
+
+<!-- ============ REFERENCE ============ -->
+<div class="wrap ref">
+  <details>
+    <summary>
+      <span class="ic" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(207,162,74,.1);border:1px solid rgba(207,162,74,.28);color:var(--gold-bright)">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </span>
+      Справочник норм и тарифов
+      <span class="arw"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </summary>
+    <div class="rc">
+      <table class="tbl">
+        <tr><th>Материал</th><th>Норма</th><th>Обычный слой</th></tr>
+        <tr><td>Штукатурка гипсовая</td><td class="mono">≈ 0,85 кг/м² · мм</td><td>10–30 мм</td></tr>
+        <tr><td>Штукатурка цементная</td><td class="mono">≈ 1,7 кг/м² · мм</td><td>10–30 мм</td></tr>
+        <tr><td>Шпаклёвка базовая (старт)</td><td class="mono">≈ 1,1 кг/м² · мм</td><td>2–5 мм</td></tr>
+        <tr><td>Шпаклёвка финишная</td><td class="mono">≈ 1,0 кг/м² · мм</td><td>0,5–2 мм</td></tr>
+        <tr><td>Стяжка / пескобетон М300</td><td class="mono">≈ 2,0 кг/м² · мм</td><td>30–80 мм</td></tr>
+        <tr><td>Наливной пол</td><td class="mono">≈ 1,6 кг/м² · мм</td><td>3–15 мм</td></tr>
+        <tr><td>Утеплитель — стены</td><td class="mono">по объёму плит/рулона</td><td>50–150 мм</td></tr>
+        <tr><td>Утеплитель — скатная кровля</td><td class="mono">по объёму плит/рулона</td><td>150–250 мм</td></tr>
+        <tr><td>Рулонная гидроизоляция</td><td class="mono">нахлёст ≈ 10 см</td><td>1–2 слоя</td></tr>
+        <tr><td>Плитка / керамогранит</td><td class="mono">по площади плитки</td><td>запас 10–15 %</td></tr>
+        <tr><td>Клей плиточный</td><td class="mono">≈ 3–8 кг/м²</td><td>зависит от гребёнки</td></tr>
+        <tr><td>Потолок Армстронг 600×600</td><td class="mono">плита 2,78 шт/м²</td><td>каркас по нормам</td></tr>
+        <tr><th>Услуга</th><th>Как считается</th><th>Надбавки</th></tr>
+        <tr><td>Доставка по городу</td><td class="mono">зона 1–7 × машина × оплата</td><td>19–21 ×1,5 · 21–8 ×2 · к времени +50 %</td></tr>
+        <tr><td>Доставка межгород</td><td class="mono">подача + км × тариф</td><td>до 1,5 т: 900 ₽ + 55 ₽/км (УК)</td></tr>
+        <tr><td>Подъём на этаж</td><td class="mono">1,1 ₽ × кг × этаж</td><td>выше 5 эт. вручную — 1,65 ₽; листовые ×2</td></tr>
+        <tr><td>Подъём — минимум</td><td class="mono">650 ₽ / 1100 ₽</td><td>до 100 кг / свыше 100 кг и листовые</td></tr>
+        <tr><td>Распил</td><td class="mono">продольные + поперечные резы</td><td>в стоимость товара +55 %</td></tr>
+      </table>
+      <p class="note" style="margin-top:14px">Нормы расхода ориентировочные: точная норма указана на упаковке производителя (КНАУФ, Vetonit, ЦЕМЕНТУМ, Технониколь, Изоспан и др.), её можно ввести вручную. Тарифы услуг — по регламентам компании (доставка — ред. апрель 2024, подъём — ред. 27.11.2023, распил — 2026).</p>
+    </div>
+  </details>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div class="fb"><svg viewBox="0 0 24 24" fill="none"><path d="M3 21V9.5L12 3l9 6.5V21" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Калькулятор материалов и услуг</div>
+      <div class="fb"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Расчёт занимает 10 секунд</div>
+      <a class="fb" href="#" id="vOpen2"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>Видео-инструкция</a>
+    </div>
+    <p class="disc">Результаты носят справочный характер и предназначены для предварительного подбора количества материала и стоимости услуг. Итоговый расход зависит от состояния основания, температуры, квалификации мастера и рекомендаций производителя. Стоимость услуг сверяйте с действующими регламентами; сотрудник, оформляющий доставку, отвечает за правильность расчёта.</p>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const num=v=>{v=parseFloat(String(v).replace(',','.'));return isNaN(v)||v<0?0:v;};
+const ceil=v=>Math.ceil(v-1e-9);
+const rk=v=>ru(v,v%1?1:0);
+const ru=(v,d=0)=>Number(v).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d});
+const plural=(n,one,few,many)=>{const m=Math.abs(n)%100,l=m%10;if(m>10&&m<20)return many;if(l>1&&l<5)return few;if(l===1)return one;return many;};
+const state={tab:'mix'};
+const SERVICES=['dlv','lift','saw'];
+
+/* ---------- data ---------- */
+const MIX_TYPES={
+  shtuk_gips:{name:'Штукатурка гипсовая',norm:0.85,thick:10,bag:30,note:'Тип «Ротбанд». Норма ≈ 0,85 кг на м² при слое 1 мм.'},
+  shtuk_cem:{name:'Штукатурка цементная',norm:1.7,thick:15,bag:25,note:'Тип «Унтерпутц». Тяжелее гипсовой, слой обычно 10–30 мм.'},
+  shpakl_start:{name:'Шпаклёвка базовая (старт)',norm:1.1,thick:3,bag:25,note:'Выравнивающий слой под финиш, обычно 2–5 мм.'},
+  shpakl_finish:{name:'Шпаклёвка финишная',norm:1.0,thick:1.5,bag:20,note:'Тонкий слой под покраску / обои, 0,5–2 мм.'},
+  styazhka:{name:'Стяжка / пескобетон М300',norm:2.0,thick:50,bag:40,note:'Пескобетон для пола. При слое 50 мм ≈ 100 кг на м².'},
+  naliv:{name:'Наливной пол',norm:1.6,thick:8,bag:25,note:'Самовыравнивающийся ровнитель, слой 3–15 мм.'}
+};
+const MIX_PRESETS=[
+  ['Штукатурка гипс','shtuk_gips'],['Штукатурка цемент','shtuk_cem'],
+  ['Шпаклёвка старт','shpakl_start'],['Шпаклёвка финиш','shpakl_finish'],
+  ['Стяжка / пескобетон','styazhka'],['Наливной пол','naliv']
+];
+const INS_PLATE_PRESETS=[
+  ['Техноблок 1200×600×50',{l:1200,w:600,t:50,per:8}],
+  ['Техноблок 1200×600×100',{l:1200,w:600,t:100,per:4}],
+  ['ТехноФАС 1200×600×100',{l:1200,w:600,t:100,per:3}],
+  ['Тёплые Стены 610×1000×50',{l:610,w:1000,t:50,per:10}],
+  ['Каркасный дом 600×1000×100',{l:600,w:1000,t:100,per:4}],
+  ['Изолайф 1200×600×50',{l:1200,w:600,t:50,per:8}]
+];
+const INS_ROLL_PRESETS=[
+  ['ПРОФИ Твин 50 мм · 10 м²',{a:10,t:50}],
+  ['Тёплый Дом Твин 100 мм · 17,08 м²',{a:17.08,t:100}],
+  ['Тёплая Крыша Стронг 150 мм · 4,88 м²',{a:4.88,t:150}],
+  ['ПРОФИ 100 мм · 5 м²',{a:5,t:100}],
+  ['Сауна 50 мм · 15 м²',{a:15,t:50}]
+];
+const ROLL_PRESETS=[
+  ['Изоспан A · 1,6×43,75',{w:1.6,len:43.75,lap:10,layers:1,note:'Ветрозащитная мембрана, 70 м² в рулоне.'}],
+  ['Гидроизоляция наплавляемая',{w:1,len:10,lap:10,layers:2,note:'Обычно 2 слоя, нахлёст 10 см.'}],
+  ['Рубероид · 1×15',{w:1,len:15,lap:10,layers:1,note:'Рулон 15 м², нахлёст 10 см.'}],
+  ['Пароизоляция · 1,6×43,75',{w:1.6,len:43.75,lap:10,layers:1,note:'Плёнка 70 м² в рулоне.'}]
+];
+const TILE_PRESETS=[
+  ['200×300 настенная',{a:200,b:300,per:24}],
+  ['250×400 настенная',{a:250,b:400,per:15}],
+  ['300×300 пол',{a:300,b:300,per:11}],
+  ['300×600',{a:300,b:600,per:9}],
+  ['600×600 керамогранит',{a:600,b:600,per:4}],
+  ['600×1200 керамогранит',{a:600,b:1200,per:3}]
+];
+const ARM_PRESETS=[
+  ['Плита 600×600',{plate:2.78,per:16,main:0.23,t12:1.17,t06:2.3,hang:0.7,angle:3,note:'Классическая сетка 600×600: несущий 3,7 м + поперечные 1,2 и 0,6 м.'}],
+  ['Плита 600×1200',{plate:1.39,per:8,main:0.23,t12:1.17,t06:0,hang:0.7,angle:3,note:'Сетка 600×1200: только несущий 3,7 м и поперечный 1,2 м, коротких 0,6 м нет.'}]
+];
+
+/* ---------- services data (по регламентам) ---------- */
+const MAP_ALL='https://yandex.ru/maps/194/saratov/?ll=45.987269%2C51.532744&mode=usermaps&source=constructorLink&um=constructor%3Ac66fe8e4d98321075e464c84697d173cd30c0d6ca1bc42ddbbae545cbc142eb4&z=11';
+const DLV_WH={
+  pp:{name:'Пугачевский',map:'https://yandex.ru/maps/194/saratov/?ll=46.014688%2C51.553729&mode=usermaps&source=constructorLink&um=constructor%3A45aabc5fb3a47ab4b298a249d0258d487368b3d71b906d4e4c9d199b09c0c9e7&z=12',note:'Зону смотрите на карте склада Пугачевский. Цену для клиента берите от ближайшего склада.'},
+  nash:{name:'НАШ',map:'https://yandex.ru/maps/194/saratov/?ll=45.989654%2C51.506530&mode=usermaps&source=constructorLink&um=constructor%3A53ff214958465216c18575f2d9b165269135082a829c80ebb819b9632b2e0615&z=12',note:'Объёмные и тяжёлые доставки по Саратову оформляются по максимуму с РЦ НАШ (кроме кирпича, блоков, цемента), а цену для клиента берите от ближайшего склада.'},
+  les:{name:'Лесозаводская',map:'https://yandex.ru/maps/11147/engels/?ll=46.114931%2C51.491441&mode=usermaps&source=constructorLink&um=constructor%3Ac8b1bc594884ce89c52109791332cc85958065a495996ec1646ca4ddb222cde4&z=13',note:'По Энгельсу с Лесозаводской — 4 зоны. Дальше 4-й зоны: цена 4-й зоны + км по тарифу межгорода от её границы.'}
+};
+const DLV_CARS={
+  s15:{name:'6,48 м³ · до 1,5 т',kg:1500,vol:6.48,tier:'t15'},
+  s20:{name:'6,48 м³ · 1,5–2 т',kg:2000,vol:6.48,tier:'t20'},
+  b20:{name:'13 м³ · до 2 т',kg:2000,vol:13,tier:'t20'}
+};
+/* цены по зонам 1…7 */
+const DLV_PRICE={
+  s15:{uk:[900,1000,1100,1350,1500,1600,1700],bn:[1160,1250,1400,1650,1850,2000,2150]},
+  s20:{uk:[1250,1350,1550,1750,1950,2050,2150],bn:[1550,1650,1850,2150,2350,2450,2650]},
+  b20:{uk:[1200,1350,1650,1850,2250,2350,2700],bn:[1550,1700,2100,2350,2850,2950,3400]}
+};
+/* межгород: [подача машины, ₽ за км] */
+const DLV_INTER={
+  t15:{name:'до 1,5 т',uk:[900,55],bn:[1160,71]},
+  t20:{name:'1,5–2 т',uk:[1050,77],bn:[1350,99]},
+  t30:{name:'до 3 т',uk:[1200,165],bn:[1550,212]}
+};
+/* подъём: [название, вес 1 шт кг, листовой] */
+const LIFT_MAT=[
+  ['Мешок 50 кг',50,false],['Мешок 40 кг',40,false],['Мешок 30 кг',30,false],['Мешок 25 кг',25,false],['Мешок 20 кг',20,false],
+  ['ГКЛ 12,5 мм (≈25 кг)',25,true],['ОСБ 9 мм 2500×1250 (≈19 кг)',19,true],['Фанера 10 мм 1525×1525 (≈15 кг)',15,true],['ЦСП 10 мм 3200×1250 (≈54 кг)',54,true],
+  ['Линолеум (вес вручную)',0,true],['Другое (вес вручную)',0,false]
+];
+const LIFT_HOW=[
+  ['lift','На лифте (×2)'],['hand','Вручную по лестнице (× этаж)'],['ground','К подъезду, на 1 этаж или к лифту (×2)'],['unload','Только выгрузка из машины (×1)']
+];
+/* распил: [название, продольный рез ₽, поперечный рез ₽] — регламент 2026 */
+const SAW_MAT=[
+  ['ЦСП 10–12 мм',250,125],['ЦСП 16–24 мм',280,160],
+  ['ОСБ 9–12 мм',135,90],['ОСБ 15–18 мм',155,110],
+  ['ДСП 16 мм',210,100],['ДВП 3–4 мм',55,50],
+  ['Фанера 4–10 мм',65,65],['Фанера 12–20 мм',110,110],
+  ['ГКЛ, ГКЛВ 9,5–12,5 мм',80,45],['ГКЛ 15, Сапфир, Аквамарин',110,70],['ГВЛВ 10–12 мм',130,70],
+  ['Труба профильная до 60 мм (стенка до 4 мм)',70,70],['Уголок металл. 40×40 (до 4 мм)',70,70],['Труба профильная до 80 мм (стенка 2–3 мм)',100,100]
+];
+
+/* ---------- build selects / chips ---------- */
+(function(){
+  const sel=$('#mixType');
+  Object.entries(MIX_TYPES).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v.name;sel.appendChild(o);});
+  const mp=$('#mixPresets');
+  MIX_PRESETS.forEach(([label,key],i)=>{const c=document.createElement('button');c.className='chip'+(i===0?' on':'');c.textContent=label;c.dataset.k=key;mp.appendChild(c);});
+  const ip=$('#insPlatePresets');
+  INS_PLATE_PRESETS.forEach(([label,p],i)=>{const c=document.createElement('button');c.className='chip'+(i===0?' on':'');c.textContent=label;c.dataset.p=JSON.stringify(p);ip.appendChild(c);});
+  const irp=$('#insRollPresets');
+  INS_ROLL_PRESETS.forEach(([label,p],i)=>{const c=document.createElement('button');c.className='chip'+(i===0?' on':'');c.textContent=label;c.dataset.p=JSON.stringify(p);irp.appendChild(c);});
+  const rp=$('#rollPresets');
+  ROLL_PRESETS.forEach(([label,p],i)=>{const c=document.createElement('button');c.className='chip'+(i===0?' on':'');c.textContent=label;c.dataset.p=JSON.stringify(p);rp.appendChild(c);});
+  const tp=$('#tilePresets');
+  TILE_PRESETS.forEach(([label,p],i)=>{const c=document.createElement('button');c.className='chip'+(i===2?' on':'');c.textContent=label;c.dataset.p=JSON.stringify(p);tp.appendChild(c);});
+  const ap=$('#armPresets');
+  ARM_PRESETS.forEach(([label,p],i)=>{const c=document.createElement('button');c.className='chip'+(i===0?' on':'');c.textContent=label;c.dataset.p=JSON.stringify(p);ap.appendChild(c);});
+})();
+
+/* ---------- tabs ---------- */
+const HERO={
+  mix:['Расход <em>сухих смесей</em> на квадратный метр','Быстрый расчёт количества мешков для клиента прямо на прилавке. Выберите материал, укажите площадь и толщину слоя, добавьте запас, распечатайте.'],
+  ins:['Расход <em>минерального утеплителя</em> на стены и кровлю','Считаем число плит и упаковок или рулонов минеральной ваты под нужную толщину утепления, с учётом слоёв и запаса. Форму выпуска выбираете переключателем.'],
+  roll:['Расход <em>рулонных материалов</em>','Гидроизоляция, мембраны, пароизоляция и рубероид. Учитываем нахлёст, количество слоёв и полезную площадь рулона.'],
+  tile:['Расход <em>плитки и керамогранита</em>','Считаем число плиток и упаковок под площадь укладки с запасом на подрезку, плюс ориентировочный расход плиточного клея.'],
+  arm:['Расчёт <em>потолка Армстронг</em>','Плиты, несущие и поперечные профили, подвесы и пристенный уголок — полный комплект каркаса по площади помещения.'],
+  dlv:['Стоимость <em>доставки</em> со склада','Зона, машина и форма оплаты — по регламенту доставки. Вечер, ночь, точное время, межгород и выезд за последнюю зону считаются автоматически.'],
+  lift:['Разгрузка и <em>подъём на этаж</em>','Формула регламента: 1,1 ₽ × кг × этаж. Лифт, ручной подъём выше 5-го этажа, листовые материалы и минимальная стоимость уже учтены.'],
+  saw:['Стоимость <em>распила</em> листовых материалов','Цена за продольные и поперечные резы по действующему прайсу. В один заказ можно добавить несколько материалов.']
+};
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{
+  $$('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  t.setAttribute('aria-selected','true');
+  state.tab=t.dataset.tab;
+  $$('.calc').forEach(s=>s.classList.remove('active'));
+  $('#tab-'+state.tab).classList.add('active');
+  try{t.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});}catch(e){}
+  $('#heroTitle').innerHTML=HERO[state.tab][0];
+  $('#heroText').textContent=HERO[state.tab][1];
+  const svc=SERVICES.includes(state.tab);
+  $('#heroBadges').style.display=svc?'none':'';
+  $('#rHead').textContent=svc?'Стоимость услуги':'К продаже';
+  calc();
+}));
+
+/* ---------- segmented helpers ---------- */
+function seg(id,attr,cb){
+  $$(id+' button').forEach(b=>b.addEventListener('click',()=>{
+    $$(id+' button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');cb(b.dataset[attr]);
+  }));
+}
+function getSeg(id,attr){const b=$(id+' button.on');return b?b.dataset[attr]:null;}
+function setSeg(id,attr,val){$$(id+' button').forEach(b=>b.classList.toggle('on',b.dataset[attr]===val));}
+
+/* mix area mode */
+seg('#mixAreaMode','m',m=>{
+  $('#mixAreaDirect').style.display=m==='direct'?'':'none';
+  $('#mixAreaDims').style.display=m==='dims'?'':'none';calc();
+});
+seg('#mixZapas','z',calc);
+seg('#insZapas','z',calc);
+seg('#rollZapas','z',calc);
+seg('#tileZapas','z',calc);
+seg('#armZapas','z',calc);
+seg('#tileAreaMode','m',m=>{
+  $('#tileAreaDirect').style.display=m==='direct'?'':'none';
+  $('#tileAreaDims').style.display=m==='dims'?'':'none';calc();
+});
+seg('#insTarget','t',t=>{
+  $('#insReq').value=(t==='roof')?200:100;
+  $('#insNote').textContent=(t==='roof')?'Для скатной кровли и холодного чердака в средней полосе обычно закладывают 150–250 мм.':'Для наружных стен обычно 100–150 мм в зависимости от региона и системы фасада.';
+  calc();
+});
+seg('#insFormat','f',f=>{
+  const roll=f==='roll';
+  $('#insPlateBlock').style.display=roll?'none':'';
+  $('#insRollBlock').style.display=roll?'':'none';
+  $('#insPlatePresets').style.display=roll?'none':'';
+  $('#insRollPresets').style.display=roll?'':'none';
+  $('#tab-ins .head .hint').textContent=roll?'рулоны, упаковки':'плиты, упаковки';
+  calc();
+});
+
+/* services segs */
+seg('#dlvWh','w',w=>{applyWh(w);calc();});
+seg('#dlvKind','k',k=>{
+  $('#dlvCityBlock').style.display=k==='city'?'':'none';
+  $('#dlvInterBlock').style.display=k==='inter'?'':'none';calc();
+});
+seg('#dlvZone','z',calc);
+seg('#dlvCar','c',calc);
+seg('#dlvPay','p',calc);
+seg('#dlvTime','t',calc);
+seg('#liftPay','p',calc);
+seg('#sawPay','p',calc);
+
+function applyWh(w){
+  const W=DLV_WH[w];
+  $('#dlvWhNote').textContent=W.note;
+  $('#dlvMap').href=W.map;
+  $('#dlvMap').textContent='Карта зон: '+W.name+' ↗';
+  $('#dlvMapAll').href=MAP_ALL;
+}
+function autoCar(){
+  const kg=num($('#dlvKg').value),vol=num($('#dlvVol').value);
+  let c='b20';
+  if(kg<=1500&&vol<=6.48)c='s15';
+  else if(kg<=2000&&vol<=6.48)c='s20';
+  setSeg('#dlvCar','c',c);
+}
+$('#dlvKg').addEventListener('input',autoCar);
+$('#dlvVol').addEventListener('input',autoCar);
+
+/* ---------- mix type + presets ---------- */
+function applyMix(key){
+  const m=MIX_TYPES[key];if(!m)return;
+  $('#mixType').value=key;
+  $('#mixNorm').value=m.norm;
+  $('#mixThick').value=m.thick;
+  $('#mixBag').value=m.bag;
+  $('#mixNote').textContent=m.note;
+  $$('#mixPresets .chip').forEach(c=>c.classList.toggle('on',c.dataset.k===key));
+  calc();
+}
+$('#mixType').addEventListener('change',e=>applyMix(e.target.value));
+$$('#mixPresets .chip').forEach(c=>c.addEventListener('click',()=>applyMix(c.dataset.k)));
+
+$$('#insPlatePresets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=JSON.parse(c.dataset.p);
+  $('#insL').value=p.l;$('#insW').value=p.w;$('#insT').value=p.t;$('#insPer').value=p.per;
+  $$('#insPlatePresets .chip').forEach(x=>x.classList.toggle('on',x===c));calc();
+}));
+$$('#insRollPresets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=JSON.parse(c.dataset.p);
+  $('#insRollArea').value=p.a;$('#insRollThick').value=p.t;
+  $$('#insRollPresets .chip').forEach(x=>x.classList.toggle('on',x===c));calc();
+}));
+$$('#rollPresets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=JSON.parse(c.dataset.p);
+  $('#rollW').value=p.w;$('#rollLen').value=p.len;$('#rollLap').value=p.lap;$('#rollLayers').value=p.layers;
+  $('#rollNote').textContent=p.note||'';
+  $$('#rollPresets .chip').forEach(x=>x.classList.toggle('on',x===c));calc();
+}));
+$$('#tilePresets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=JSON.parse(c.dataset.p);
+  $('#tileA').value=p.a;$('#tileB').value=p.b;$('#tilePer').value=p.per;
+  $$('#tilePresets .chip').forEach(x=>x.classList.toggle('on',x===c));calc();
+}));
+$$('#armPresets .chip').forEach(c=>c.addEventListener('click',()=>{
+  const p=JSON.parse(c.dataset.p);
+  $('#armPlate').value=p.plate;$('#armPer').value=p.per;$('#armMain').value=p.main;
+  $('#armT12').value=p.t12;$('#armT06').value=p.t06;$('#armHang').value=p.hang;$('#armAngle').value=p.angle;
+  $$('#armPresets .chip').forEach(x=>x.classList.toggle('on',x===c));calc();
+}));
+
+/* ---------- dynamic rows: подъём ---------- */
+function opts(list,sel){return list.map((x,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+x[0]+'</option>').join('');}
+function liftRow(p){
+  p=p||{m:1,q:40,how:'lift',fl:5};
+  const M=LIFT_MAT[p.m];
+  const d=document.createElement('div');d.className='pos';
+  d.innerHTML=
+    '<div class="pos-head"><span class="pn">Позиция</span><button class="pos-del" type="button">Удалить</button></div>'+
+    '<div class="field"><label>Товар</label><div class="inp"><select class="l-mat">'+opts(LIFT_MAT,p.m)+'</select></div></div>'+
+    '<div class="field row3">'+
+      '<div><label>Кол-во, шт</label><div class="inp"><input class="l-q" type="number" min="0" step="1" value="'+p.q+'"></div></div>'+
+      '<div><label>Вес 1 шт, кг</label><div class="inp"><input class="l-w" type="number" min="0" step="0.5" value="'+M[1]+'"></div></div>'+
+      '<div class="l-flw"><label>Этаж</label><div class="inp"><input class="l-fl" type="number" min="1" step="1" value="'+p.fl+'"></div></div>'+
+    '</div>'+
+    '<div class="field"><label>Как поднимаем</label><div class="inp"><select class="l-how">'+LIFT_HOW.map(h=>'<option value="'+h[0]+'"'+(h[0]===p.how?' selected':'')+'>'+h[1]+'</option>').join('')+'</select></div></div>'+
+    '<label class="check"><input type="checkbox" class="l-sh"'+(M[2]?' checked':'')+'>Листовой материал или линолеум — 2 грузчика, ×2</label>'+
+    '<div class="note l-sum"></div>';
+  $('#liftList').appendChild(d);
+  liftFloorVis(d);
+  numberRows('#liftList','Позиция');
+  inputModes(d);
+}
+function liftFloorVis(d){const how=d.querySelector('.l-how').value;d.querySelector('.l-flw').style.visibility=how==='hand'?'visible':'hidden';}
+
+/* ---------- dynamic rows: распил ---------- */
+function sawRow(p){
+  p=p||{m:0,sh:1,a:1,b:4};
+  const d=document.createElement('div');d.className='pos';
+  d.innerHTML=
+    '<div class="pos-head"><span class="pn">Материал</span><button class="pos-del" type="button">Удалить</button></div>'+
+    '<div class="field"><label>Материал, толщина</label><div class="inp"><select class="s-mat">'+opts(SAW_MAT,p.m)+'</select></div><div class="note s-price"></div></div>'+
+    '<div class="field row3">'+
+      '<div><label>Листов</label><div class="inp"><input class="s-sh" type="number" min="0" step="1" value="'+p.sh+'"></div></div>'+
+      '<div><label>Резов вдоль</label><div class="inp"><input class="s-a" type="number" min="0" step="1" value="'+p.a+'"></div></div>'+
+      '<div><label>Резов поперёк</label><div class="inp"><input class="s-b" type="number" min="0" step="1" value="'+p.b+'"></div></div>'+
+    '</div>'+
+    '<div class="note s-sum"></div>';
+  $('#sawList').appendChild(d);
+  numberRows('#sawList','Материал');
+  inputModes(d);
+}
+function numberRows(list,word){
+  const rows=$$(list+' .pos');
+  rows.forEach((r,i)=>{r.querySelector('.pn').textContent=word+' '+(i+1);r.querySelector('.pos-del').style.display=rows.length>1?'':'none';});
+}
+function inputModes(root){root.querySelectorAll('input[type=number]').forEach(el=>{el.setAttribute('inputmode','decimal');el.setAttribute('autocomplete','off');});}
+
+$('#liftAdd').addEventListener('click',()=>{liftRow({m:5,q:10,how:'hand',fl:4});calc();});
+$('#sawAdd').addEventListener('click',()=>{sawRow({m:6,sh:1,a:0,b:1});calc();});
+['#liftList','#sawList'].forEach(id=>{
+  const box=$(id);
+  box.addEventListener('input',calc);
+  box.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.classList.contains('l-mat')){
+      const M=LIFT_MAT[+t.value],row=t.closest('.pos');
+      if(M[1]>0)row.querySelector('.l-w').value=M[1];else{row.querySelector('.l-w').value='';row.querySelector('.l-w').focus();}
+      row.querySelector('.l-sh').checked=M[2];
+    }
+    if(t.classList.contains('l-how'))liftFloorVis(t.closest('.pos'));
+    calc();
+  });
+  box.addEventListener('click',e=>{
+    if(!e.target.classList.contains('pos-del'))return;
+    e.target.closest('.pos').remove();
+    numberRows(id,id==='#liftList'?'Позиция':'Материал');calc();
+  });
+});
+
+/* ---------- live inputs ---------- */
+$$('input,select').forEach(el=>el.addEventListener('input',calc));
+
+/* ---------- render result ---------- */
+let lastText='';
+function render(numTxt,unit,sub,rows){
+  const numEl=$('#rNum'),bigEl=$('#rBig');
+  numEl.textContent=numTxt;
+  $('#rUnit').textContent=unit;
+  $('#rSub').innerHTML=sub;
+  const b=$('#rBreak');b.innerHTML='';
+  rows.forEach(r=>{
+    const d=document.createElement('div');d.className='brow';
+    d.innerHTML='<span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span>';
+    b.appendChild(d);
+  });
+  bigEl.classList.remove('flash');void bigEl.offsetWidth;bigEl.classList.add('flash');
+  lastText=buildClipboard(numTxt,unit,sub,rows);
+}
+function buildClipboard(numTxt,unit,sub,rows){
+  const title={mix:'Расход сухой смеси',tile:'Расход плитки',ins:'Расход утеплителя',roll:'Расход рулонного материала',arm:'Потолок Армстронг',dlv:'Доставка',lift:'Разгрузка и подъём на этаж',saw:'Распил'}[state.tab];
+  const label=SERVICES.includes(state.tab)?'Стоимость: ':'К продаже: ';
+  let t=title+'\n'+label+numTxt+' '+unit+'\n'+sub.replace(/<[^>]+>/g,'')+'\n';
+  rows.forEach(r=>t+='• '+r[0].replace(/<[^>]+>/g,'')+': '+r[1].replace(/<[^>]+>/g,'')+'\n');
+  return t.trim();
+}
+
+/* ---------- calculators ---------- */
+function calc(){
+  if(state.tab==='mix')return calcMix();
+  if(state.tab==='tile')return calcTile();
+  if(state.tab==='ins')return calcIns();
+  if(state.tab==='roll')return calcRoll();
+  if(state.tab==='arm')return calcArm();
+  if(state.tab==='dlv')return calcDlv();
+  if(state.tab==='lift')return calcLift();
+  if(state.tab==='saw')return calcSaw();
+}
+function mixArea(){
+  if(getSeg('#mixAreaMode','m')==='dims'){
+    const a=num($('#mixLen').value)*num($('#mixHt').value)-num($('#mixDeduct').value);
+    return a>0?a:0;
+  }
+  return num($('#mixArea').value);
+}
+function calcMix(){
+  const area=mixArea(),thick=num($('#mixThick').value),norm=num($('#mixNorm').value),bag=num($('#mixBag').value);
+  const z=num(getSeg('#mixZapas','z'))/100;
+  const kgClean=area*thick*norm;
+  const kg=kgClean*(1+z);
+  if(area<=0||thick<=0||norm<=0||bag<=0){
+    render('0','мешков','Заполните параметры расчёта.',[]);return;
+  }
+  const bags=ceil(kg/bag);
+  render(ru(bags),bags===1?'мешок':(bags<5?'мешка':'мешков'),
+    'Всего смеси: <b>'+ru(kg,1)+' кг</b>'+(z?' (с запасом '+(z*100)+'%)':''),
+    [
+      ['Площадь',ru(area,2)+' м²'],
+      ['Толщина слоя',ru(thick,1)+' мм'],
+      ['Норма расхода',ru(norm,2)+' кг/м²·мм'],
+      ['Расход без запаса',ru(kgClean,1)+' кг'],
+      ['С запасом '+(z*100)+'%',ru(kg,1)+' кг'],
+      ['Фасовка',ru(bag)+' кг'],
+      ['<b>Мешков к продаже</b>','<em>'+ru(bags)+' шт</em>']
+    ]);
+}
+function calcIns(){
+  const fmt=getSeg('#insFormat','f')||'plate';
+  const area=num($('#insArea').value),req=num($('#insReq').value);
+  const z=num(getSeg('#insZapas','z'))/100;
+  if(fmt==='roll'){
+    const rArea=num($('#insRollArea').value),rT=num($('#insRollThick').value);
+    if(area<=0||req<=0||rArea<=0||rT<=0){render('0','рулонов','Заполните параметры расчёта.',[]);$('#insLayerNote').textContent='';return;}
+    const layers=ceil(req/rT),effT=layers*rT;
+    const material=area*layers*(1+z);
+    const rolls=ceil(material/rArea);
+    const volume=area*(effT/1000)*(1+z);
+    $('#insLayerNote').textContent='Слоёв: '+layers+' × '+ru(rT)+' мм = '+ru(effT)+' мм фактически.';
+    render(ru(rolls),plural(rolls,'рулон','рулона','рулонов'),
+      'Материала: <b>'+ru(material,1)+' м²</b> · объём ≈ <b>'+ru(volume,2)+' м³</b>',
+      [
+        ['Площадь',ru(area,2)+' м²'],
+        ['Толщина / слои',ru(effT)+' мм ('+layers+'×'+ru(rT)+')'],
+        ['Площадь в упаковке',ru(rArea,2)+' м²'],
+        ['Нужно материала'+(z?' (+'+(z*100)+'%)':''),ru(material,1)+' м²'],
+        ['Объём утеплителя',ru(volume,2)+' м³'],
+        ['<b>Рулонов к продаже</b>','<em>'+ru(rolls)+' шт</em>']
+      ]);
+    return;
+  }
+  const L=num($('#insL').value),W=num($('#insW').value),T=num($('#insT').value),per=num($('#insPer').value);
+  if(area<=0||req<=0||L<=0||W<=0||T<=0||per<=0){
+    render('0','упаковок','Заполните параметры расчёта.',[]);
+    $('#insLayerNote').textContent='';return;
+  }
+  const layers=ceil(req/T);
+  const effT=layers*T;
+  const plateArea=(L/1000)*(W/1000);
+  const workArea=area*(1+z);
+  const platesNeeded=ceil(workArea/plateArea)*layers;
+  const packs=ceil(platesNeeded/per);
+  const totalPlates=packs*per;
+  const volume=area*(effT/1000)*(1+z);
+  $('#insLayerNote').textContent='Слоёв: '+layers+' × '+ru(T)+' мм = '+ru(effT)+' мм фактически.';
+  render(ru(packs),plural(packs,'упаковка','упаковки','упаковок'),
+    'Плит: <b>'+ru(platesNeeded)+' шт</b> · объём ≈ <b>'+ru(volume,2)+' м³</b>',
+    [
+      ['Площадь',ru(area,2)+' м²'],
+      ['Толщина / слои',ru(effT)+' мм ('+layers+'×'+ru(T)+')'],
+      ['Площадь плиты',ru(plateArea,3)+' м²'],
+      ['Плит в упаковке',ru(per)+' шт'],
+      ['Нужно плит'+(z?' (+'+(z*100)+'%)':''),ru(platesNeeded)+' шт'],
+      ['Объём утеплителя',ru(volume,2)+' м³'],
+      ['<b>Упаковок к продаже</b>','<em>'+ru(packs)+' шт</em> ('+ru(totalPlates)+' плит)']
+    ]);
+}
+function calcRoll(){
+  const area=num($('#rollArea').value),w=num($('#rollW').value),len=num($('#rollLen').value);
+  const lap=num($('#rollLap').value)/100,layers=num($('#rollLayers').value)||1;
+  const z=num(getSeg('#rollZapas','z'))/100;
+  const usefulW=Math.max(0,w-lap);
+  const rollFull=w*len;
+  const rollUseful=usefulW*len;
+  if(area<=0||w<=0||len<=0||usefulW<=0){
+    render('0','рулонов','Заполните параметры расчёта.',[]);return;
+  }
+  const workArea=area*layers*(1+z);
+  const rolls=ceil(workArea/rollUseful);
+  const covered=rolls*rollUseful;
+  render(ru(rolls),rolls===1?'рулон':(rolls<5?'рулона':'рулонов'),
+    'Полезная площадь рулона: <b>'+ru(rollUseful,2)+' м²</b>'+(layers>1?' · слоёв: <b>'+layers+'</b>':''),
+    [
+      ['Площадь покрытия',ru(area,2)+' м²'],
+      ['Рулон',ru(w,2)+'×'+ru(len,2)+' м = '+ru(rollFull,2)+' м²'],
+      ['Нахлёст',ru(lap*100)+' см'],
+      ['Полезно с рулона',ru(rollUseful,2)+' м²'],
+      ['Нужно покрыть'+(layers>1?' ×'+layers+' сл.':'')+(z?' +'+(z*100)+'%':''),ru(workArea,2)+' м²'],
+      ['Перекрытие фактически',ru(covered,2)+' м²'],
+      ['<b>Рулонов к продаже</b>','<em>'+ru(rolls)+' шт</em>']
+    ]);
+}
+function tileArea(){
+  if(getSeg('#tileAreaMode','m')==='dims'){
+    const a=num($('#tileLen').value)*num($('#tileHt').value)-num($('#tileDeduct').value);
+    return a>0?a:0;
+  }
+  return num($('#tileArea').value);
+}
+function calcTile(){
+  const area=tileArea(),a=num($('#tileA').value),b=num($('#tileB').value),per=num($('#tilePer').value);
+  const z=num(getSeg('#tileZapas','z'))/100;
+  const glue=num($('#tileGlue').value),glueBag=num($('#tileGlueBag').value);
+  if(area<=0||a<=0||b<=0){render('0','плиток','Заполните параметры расчёта.',[]);return;}
+  const plateArea=(a/1000)*(b/1000);
+  const work=area*(1+z);
+  const tiles=ceil(work/plateArea);
+  const packs=per>1?ceil(tiles/per):tiles;
+  const rows=[
+    ['Площадь укладки',ru(area,2)+' м²'],
+    ['Размер плитки',ru(a)+'×'+ru(b)+' мм'],
+    ['Площадь плитки',ru(plateArea,3)+' м²'],
+    ['Запас на подрезку',(z*100)+' %'],
+    ['Плиток нужно',ru(tiles)+' шт'],
+    ['Плиток в упаковке',(per>1?ru(per)+' шт':'поштучно')]
+  ];
+  let big,unit,sub;
+  if(per>1){big=ru(packs);unit=plural(packs,'упаковка','упаковки','упаковок');sub='Плиток: <b>'+ru(tiles)+' шт</b> ('+(z*100)+'% запас)';
+    rows.push(['<b>Упаковок к продаже</b>','<em>'+ru(packs)+' шт</em> ('+ru(packs*per)+' плиток)']);}
+  else{big=ru(tiles);unit=plural(tiles,'плитка','плитки','плиток');sub='С запасом на подрезку '+(z*100)+' %';
+    rows.push(['<b>Плиток к продаже</b>','<em>'+ru(tiles)+' шт</em>']);}
+  if(glue>0){
+    const glueKg=area*glue, glueBags=glueBag>0?ceil(glueKg/glueBag):0;
+    rows.push(['Клей ~'+ru(glue,1)+' кг/м²',ru(glueKg,1)+' кг']);
+    if(glueBags)rows.push(['Мешков клея по '+ru(glueBag)+' кг','<em>'+ru(glueBags)+' шт</em>']);
+    sub+=' · клей ≈ <b>'+ru(glueKg,0)+' кг</b>';
+  }
+  render(big,unit,sub,rows);
+}
+function calcArm(){
+  const L=num($('#armLen').value),W=num($('#armWid').value);
+  const z=num(getSeg('#armZapas','z'))/100;
+  const nPlate=num($('#armPlate').value),per=num($('#armPer').value);
+  const nMain=num($('#armMain').value),nT12=num($('#armT12').value),nT06=num($('#armT06').value),nHang=num($('#armHang').value);
+  const angLen=num($('#armAngle').value);
+  if(L<=0||W<=0){render('0','упаковок','Заполните размеры помещения.',[]);$('#armGeo').textContent='';return;}
+  const area=L*W, perim=2*(L+W);
+  $('#armGeo').textContent='Площадь: '+ru(area,2)+' м² · периметр: '+ru(perim,1)+' м.';
+  const plates=ceil(area*nPlate*(1+z));
+  const packs=per>1?ceil(plates/per):plates;
+  const main=ceil(area*nMain), t12=ceil(area*nT12), t06=ceil(area*nT06), hang=ceil(area*nHang);
+  const angle=angLen>0?ceil(perim/angLen):0;
+  const rows=[
+    ['Площадь потолка',ru(area,2)+' м²'],
+    ['Периметр',ru(perim,1)+' м'],
+    ['Плита 600×600'+(z?' (+'+(z*100)+'%)':''),ru(plates)+' шт'],
+    ['Профиль несущий 3,7 м',ru(main)+' шт'],
+    ['Профиль поперечный 1,2 м',ru(t12)+' шт']
+  ];
+  if(t06>0)rows.push(['Профиль поперечный 0,6 м',ru(t06)+' шт']);
+  rows.push(['Подвес',ru(hang)+' шт']);
+  if(angle>0)rows.push(['Уголок пристенный '+ru(angLen,1)+' м',ru(angle)+' шт']);
+  let big,unit,sub;
+  if(per>1){big=ru(packs);unit=plural(packs,'упаковка','упаковки','упаковок');
+    sub='Плит: <b>'+ru(plates)+' шт</b> · каркас — в разбивке ниже';
+    rows.push(['<b>Упаковок плит к продаже</b>','<em>'+ru(packs)+' шт</em> ('+ru(packs*per)+' плит)']);}
+  else{big=ru(plates);unit=plural(plates,'плита','плиты','плит');
+    sub='Плиты поштучно · каркас — в разбивке ниже';}
+  render(big,unit,sub,rows);
+}
+
+/* ---------- доставка ---------- */
+function calcDlv(){
+  const wh=getSeg('#dlvWh','w')||'pp',kind=getSeg('#dlvKind','k')||'city',car=getSeg('#dlvCar','c')||'s15';
+  const pay=getSeg('#dlvPay','p')||'uk',t=getSeg('#dlvTime','t')||'day';
+  const exact=$('#dlvExact').checked,kc=$('#dlvKc').checked;
+  const kg=num($('#dlvKg').value),vol=num($('#dlvVol').value);
+  const trips=Math.max(1,Math.round(num($('#dlvTrips').value))||1),idle=num($('#dlvIdle').value);
+  const C=DLV_CARS[car];
+  const payName=pay==='uk'?'наличные по УК':'б/нал, эквайринг, чек';
+
+  /* предупреждения по машине */
+  const warn=[];
+  if((kind==='city'||kg<=2000)&&(kg>C.kg||vol>C.vol))warn.push('Груз не помещается в выбранную машину ('+C.name+').');
+  if(kind==='city'&&(kg>2000||vol>13))warn.push('Больше 2 т или 13 м³ — нужно несколько ходок или наёмный большегруз/манипулятор (согласуйте с диспетчером; перевозчик б/нал без НДС +25 %, за наличные +55 %).');
+  if(kind==='inter'&&kg>3000)warn.push('Межгород свыше 3 т — согласуйте с диспетчером.');
+  const carNote=$('#dlvCarNote');
+  carNote.textContent=warn.length?warn.join(' '):'Кузов: 6,48 м³ — 3,0×1,8×1,2 м; 13 м³ — 4,4×1,8×1,7 м.';
+  carNote.classList.toggle('warn',warn.length>0);
+
+  let tier=C.tier;
+  if(kg>2000)tier='t30';else if(kg>1500&&tier==='t15')tier='t20';
+  const I=DLV_INTER[tier][pay];
+  const rows=[['Склад',DLV_WH[wh].name],['Машина',C.name],['Оплата',payName]];
+  let base,sub;
+
+  if(kind==='city'){
+    const z=Math.min(7,Math.max(1,num(getSeg('#dlvZone','z'))||1)),over=num($('#dlvOver').value);
+    base=DLV_PRICE[car][pay][z-1];
+    let kcOn=false;
+    if(kc&&pay==='uk'&&car==='s15'&&z<=2&&kg<=1500&&vol<=6.48){base=790;kcOn=true;}
+    rows.push(['Зона '+z+(kcOn?' · тариф контакт-центра':''),ru(base)+' ₽']);
+    if(kc&&!kcOn)rows.push(['Тариф КЦ 790 ₽','не подходит (только до 2-й зоны, до 1,5 т, 6,48 м³, нал по УК)']);
+    if(over>0){
+      const oc=over*I[1];
+      rows.push(['За зоной: '+rk(over)+' км × '+I[1]+' ₽ ('+DLV_INTER[tier].name+')',ru(oc)+' ₽']);
+      base+=oc;
+    }
+    sub='Зона <b>'+z+'</b>'+(over>0?' + <b>'+rk(over)+' км</b>':'')+' · '+C.name;
+  }else{
+    const km=num($('#dlvKm').value);
+    if(km<=0){render('0','₽','Укажите расстояние до точки выгрузки.',[]);return;}
+    const kmc=km*I[1];
+    base=I[0]+kmc;
+    rows.push(['Тариф межгорода',DLV_INTER[tier].name]);
+    rows.push(['Подача машины',ru(I[0])+' ₽']);
+    rows.push([rk(km)+' км × '+I[1]+' ₽',ru(kmc)+' ₽']);
+    sub='Межгород · <b>'+rk(km)+' км</b> · '+DLV_INTER[tier].name;
+  }
+
+  let total=base*trips;
+  if(trips>1)rows.push(['Ходок',trips+' × '+ru(base)+' ₽']);
+  if(t!=='day'){const k=t==='eve'?1.5:2;total*=k;rows.push([t==='eve'?'Вечер 19:00–21:00':'Ночь 21:00–8:00','× '+ru(k,1)]);}
+  if(exact){total*=1.5;rows.push(['К определённому времени','+50 %']);}
+  if(idle>0){const ic=idle*15;total+=ic;rows.push(['Простой '+ru(idle)+' мин × 15 ₽',ru(ic)+' ₽']);}
+  total=Math.round(total);
+  rows.push(['<b>Стоимость доставки</b>','<em>'+ru(total)+' ₽</em>']);
+  render(ru(total),'₽',sub+' · '+payName,rows);
+}
+
+/* ---------- подъём ---------- */
+function calcLift(){
+  const tech=$('#liftTech').checked,ip=getSeg('#liftPay','p')==='ip';
+  let raw=0,totKg=0,anySheet=false;const rows=[];
+  $$('#liftList .pos').forEach(el=>{
+    const q=num(el.querySelector('.l-q').value),w=num(el.querySelector('.l-w').value);
+    const how=el.querySelector('.l-how').value,sh=el.querySelector('.l-sh').checked;
+    const fl=Math.max(1,Math.round(num(el.querySelector('.l-fl').value))||1);
+    const name=LIFT_MAT[+el.querySelector('.l-mat').value][0].replace(/\s*\(.*\)$/,'');
+    const kg=q*w,sum=el.querySelector('.l-sum');
+    if(kg<=0){sum.textContent='Укажите количество и вес.';return;}
+    let coef,rate=1.1,desc;
+    if(how==='unload'){coef=1;desc='выгрузка';}
+    else if(how==='ground'){coef=2;desc='к подъезду / 1 этаж';}
+    else if(how==='lift'){coef=2+(tech?1:0);desc='лифт'+(tech?' + тех. этаж':'');}
+    else{coef=fl+(tech?1:0);if(coef>5)rate=1.65;desc=coef+' эт. вручную';}
+    const k=sh?2:1,cost=kg*rate*coef*k;
+    raw+=cost;totKg+=kg;if(sh)anySheet=true;
+    sum.innerHTML=ru(kg)+' кг × '+ru(rate,rate===1.1?1:2)+' ₽ × '+coef+(sh?' × 2':'')+' = <b>'+ru(Math.round(cost))+' ₽</b>';
+    rows.push([ru(q)+' × '+name+' · '+desc,ru(Math.round(cost))+' ₽']);
+  });
+  if(totKg<=0){render('0','₽','Добавьте товар для подъёма.',[]);return;}
+  const min=(totKg<=100&&!anySheet)?650:1100;
+  rows.unshift(['Общий вес',ru(totKg)+' кг']);
+  let total=raw;
+  if(raw<min){total=min;rows.push(['Минимальная стоимость'+(min===650?' (до 100 кг, 1 грузчик)':''),ru(min)+' ₽']);}
+  if(ip){total*=1.55;rows.push(['В стоимость товара','+55 %']);}
+  total=Math.round(total);
+  rows.push(['<b>Стоимость подъёма</b>','<em>'+ru(total)+' ₽</em>']);
+  render(ru(total),'₽','Вес <b>'+ru(totKg)+' кг</b> · '+(ip?'в стоимость товара':'наличные по УК'),rows);
+}
+
+/* ---------- распил ---------- */
+function calcSaw(){
+  const ip=getSeg('#sawPay','p')==='ip';
+  let raw=0,cuts=0;const rows=[];
+  $$('#sawList .pos').forEach(el=>{
+    const M=SAW_MAT[+el.querySelector('.s-mat').value];
+    const sh=num(el.querySelector('.s-sh').value),a=Math.round(num(el.querySelector('.s-a').value)),b=Math.round(num(el.querySelector('.s-b').value));
+    el.querySelector('.s-price').textContent='Продольный рез — '+M[1]+' ₽, поперечный — '+M[2]+' ₽';
+    const cost=a*M[1]+b*M[2];
+    el.querySelector('.s-sum').innerHTML=a+' × '+M[1]+' + '+b+' × '+M[2]+' = <b>'+ru(cost)+' ₽</b>';
+    if(a+b<=0)return;
+    raw+=cost;cuts+=a+b;
+    rows.push([M[0]+(sh?' · '+ru(sh)+' л.':'')+' · '+(a+b)+' рез.',ru(cost)+' ₽']);
+  });
+  if(cuts<=0){render('0','₽','Укажите количество резов.',[]);return;}
+  let total=raw;
+  rows.unshift(['Всего резов',ru(cuts)]);
+  if(ip){total*=1.55;rows.push(['В стоимость товара','+55 %']);}
+  total=Math.round(total);
+  rows.push(['<b>Стоимость распила</b>','<em>'+ru(total)+' ₽</em>']);
+  render(ru(total),'₽','Резов: <b>'+ru(cuts)+'</b> · '+(ip?'в стоимость товара':'наличные по УК, 100 % предоплата'),rows);
+}
+
+/* ---------- actions ---------- */
+$('#btnPrint').addEventListener('click',()=>window.print());
+$('#btnCopy').addEventListener('click',()=>{
+  navigator.clipboard.writeText(lastText).then(()=>{
+    const b=$('#btnCopy');const html=b.innerHTML;
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Скопировано';
+    b.classList.add('copied');
+    setTimeout(()=>{b.innerHTML=html;b.classList.remove('copied');},1600);
+  }).catch(()=>{});
+});
+
+/* ---------- видео-инструкция ---------- */
+(function(){
+  const m=$('#vModal'),v=$('#vPlayer');
+  const open=e=>{if(e)e.preventDefault();m.classList.add('open');document.body.style.overflow='hidden';try{v.play().catch(()=>{});}catch(_){}};
+  const close=()=>{m.classList.remove('open');document.body.style.overflow='';try{v.pause();}catch(_){}};
+  $('#vOpen').addEventListener('click',open);
+  $('#vOpen2').addEventListener('click',open);
+  $('#vClose').addEventListener('click',close);
+  m.addEventListener('click',e=>{if(e.target===m)close();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&m.classList.contains('open'))close();});
+  if(location.hash==='#video')open();
+})();
+
+/* ---------- mobile keyboards ---------- */
+$$('input[type=number]').forEach(el=>{el.setAttribute('inputmode','decimal');el.setAttribute('autocomplete','off');});
+
+/* ---------- init ---------- */
+applyMix('shtuk_gips');
+$('#insNote').textContent='Для наружных стен обычно 100–150 мм в зависимости от региона и системы фасада.';
+$('#rollNote').textContent=ROLL_PRESETS[0][1].note;
+applyWh('pp');
+autoCar();
+liftRow({m:1,q:40,how:'lift',fl:10});
+sawRow({m:0,sh:1,a:1,b:4});
+calc();
+</script>
+</body>
+</html>
