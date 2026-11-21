@@ -1,0 +1,532 @@
+<title>Аквариум с крабом</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500&display=swap">
+<style>
+  /* Layout: одна сцена на весь экран, холст-аквариум и маленькая подпись в углу. Единый «подводный» облик, без светлой темы. */
+  :root {
+    --deep: #06202b;
+    --water: #0b3d4a;
+    --glass: rgba(190, 240, 235, 0.10);
+    --ink: #e4f6f1;
+    --muted: #8fc2bb;
+    --coral: #ff7a59;
+    --font-display: "Unbounded", "Trebuchet MS", sans-serif;
+    --font-body: "Golos Text", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--deep);
+    color: var(--ink);
+    font-family: var(--font-body);
+    overflow: hidden;
+  }
+  canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+  .label {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left, 0px));
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    pointer-events: none;
+    display: grid;
+    gap: 4px;
+    max-width: 34rem;
+  }
+  .label h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.1rem, 3.2vw, 1.6rem);
+    letter-spacing: 0.02em;
+    text-wrap: balance;
+    text-shadow: 0 2px 12px rgba(0,0,0,.45);
+  }
+  .label p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-shadow: 0 1px 8px rgba(0,0,0,.5);
+  }
+  .label b { color: var(--coral); font-weight: 500; }
+</style>
+
+<canvas id="tank" aria-label="Анимация аквариума: краб ходит по песку, качаются водоросли, поднимаются пузырьки"></canvas>
+<div class="label">
+  <h1>Аквариум</h1>
+  <p>Нажмите на дно, и <b>краб</b> побежит туда. Нажмите в воде, чтобы выпустить пузырьки.</p>
+</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('tank');
+  const ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SPEED = reduce ? 0.35 : 1;
+
+  let W = 0, H = 0, DPR = 1, floorY = 0;
+  let weeds = [], rocks = [], pebbles = [], fish = [], bubbles = [];
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  // ---------- сцена ----------
+  function sandHeight(x) {
+    return floorY + Math.sin(x * 0.006) * 10 + Math.sin(x * 0.017 + 1.3) * 5;
+  }
+
+  function build() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    floorY = H * 0.82;
+
+    rocks = [];
+    const rockCount = Math.max(3, Math.round(W / 260));
+    for (let i = 0; i < rockCount; i++) {
+      const x = (i + 0.5) * W / rockCount + rand(-40, 40);
+      const r = rand(22, 46);
+      const pts = [];
+      for (let k = 0; k < 9; k++) pts.push(r * rand(0.8, 1.15));
+      rocks.push({ x, r, pts, hue: rand(190, 215), light: rand(22, 32) });
+    }
+
+    pebbles = [];
+    for (let i = 0; i < W / 6; i++) {
+      const x = rand(0, W);
+      pebbles.push({ x, y: sandHeight(x) + rand(6, H - floorY), r: rand(1, 3.2), c: `hsl(${rand(30, 45)},${rand(25, 45)}%,${rand(45, 75)}%)` });
+    }
+
+    weeds = [];
+    const weedCount = Math.max(6, Math.round(W / 70));
+    for (let i = 0; i < weedCount; i++) {
+      const x = rand(10, W - 10);
+      const tall = rand(0.28, 0.6) * H;
+      const kind = Math.random() < 0.65 ? 'ribbon' : 'kelp';
+      weeds.push({
+        x, base: sandHeight(x) + 6, len: tall, segs: 14,
+        w: kind === 'ribbon' ? rand(5, 9) : rand(9, 14),
+        phase: rand(0, Math.PI * 2), speed: rand(0.6, 1.1),
+        hue: kind === 'ribbon' ? rand(110, 150) : rand(75, 100),
+        kind, back: Math.random() < 0.45,
+      });
+    }
+    weeds.sort((a, b) => (b.back - a.back));
+
+    fish = [];
+    const fishCount = Math.max(3, Math.round(W / 300));
+    for (let i = 0; i < fishCount; i++) fish.push(makeFish(true));
+
+    crab.y = sandHeight(crab.x);
+    if (crab.x > W) crab.x = W * 0.5;
+    crab.target = crab.x;
+  }
+
+  function makeFish(initial) {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const size = rand(12, 24);
+    const palette = [[24, 95, 60], [48, 95, 58], [195, 80, 62], [330, 70, 68]][Math.floor(rand(0, 4))];
+    return {
+      x: initial ? rand(0, W) : (dir > 0 ? -60 : W + 60),
+      y: rand(H * 0.18, floorY - 80),
+      dir, size, v: rand(28, 55), wob: rand(0, 6.28), col: palette,
+    };
+  }
+
+  // ---------- краб ----------
+  const crab = {
+    x: 200, y: 0, target: 200, walk: 0, pause: 2, snap: 0, blink: 0,
+    face: 0, // смещение глаз по направлению
+  };
+
+  function updateCrab(dt, t) {
+    const dx = crab.target - crab.x;
+    if (Math.abs(dx) > 2) {
+      const dir = Math.sign(dx);
+      const v = 70 * SPEED;
+      crab.x += dir * Math.min(Math.abs(dx), v * dt);
+      crab.walk += dt * 11 * SPEED;
+      crab.face += (dir - crab.face) * Math.min(1, dt * 5);
+    } else {
+      crab.pause -= dt;
+      crab.face *= 1 - Math.min(1, dt * 2);
+      if (crab.pause <= 0) {
+        crab.target = Math.min(W - 70, Math.max(70, crab.x + rand(-W * 0.35, W * 0.35)));
+        crab.pause = rand(1.5, 4);
+        if (Math.random() < 0.5) crab.snap = 1;
+      }
+    }
+    crab.y = sandHeight(crab.x);
+    crab.snap = Math.max(0, crab.snap - dt * 0.9);
+    crab.blink -= dt;
+    if (crab.blink < -3.5) crab.blink = 0.15;
+    // краб иногда выпускает пузырёк
+    if (Math.random() < dt * 0.4) spawnBubble(crab.x + crab.face * 20, crab.y - 40, rand(2, 4));
+  }
+
+  function leg(x0, y0, side, i, gait) {
+    const lift = Math.max(0, Math.sin(gait + i * 1.7 + (side > 0 ? 0 : Math.PI))) * 6;
+    const kx = x0 + side * (18 + i * 2);
+    const ky = y0 - 10 - lift;
+    const fx = x0 + side * (30 + i * 4) + Math.cos(gait + i) * 2;
+    const fy = y0 + 14 - lift * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(kx, ky);
+    ctx.lineTo(fx, fy);
+    ctx.stroke();
+  }
+
+  function claw(side, open) {
+    // плечо
+    ctx.save();
+    ctx.translate(side * 32, -6);
+    ctx.rotate(side * 0.9);
+    ctx.fillStyle = '#e0553a';
+    ctx.beginPath(); ctx.ellipse(0, -8, 6, 11, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(0, -20);
+    ctx.rotate(side * 0.5);
+    // клешня: неподвижная часть
+    ctx.fillStyle = '#f0603f';
+    ctx.beginPath(); ctx.ellipse(0, -6, 11, 13, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-9, -12); ctx.quadraticCurveTo(-12, -30, -2, -34); ctx.quadraticCurveTo(-1, -22, 2, -14); ctx.closePath(); ctx.fill();
+    // подвижный палец
+    ctx.save();
+    ctx.translate(6, -12);
+    ctx.rotate(0.15 + open * 0.55);
+    ctx.fillStyle = '#ff7a59';
+    ctx.beginPath();
+    ctx.moveTo(-3, 0); ctx.quadraticCurveTo(6, -14, 0, -22); ctx.quadraticCurveTo(-2, -12, -6, -2); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawCrab(t) {
+    const bob = Math.abs(Math.sin(crab.walk)) * 2;
+    const x = crab.x, y = crab.y - 16 - bob;
+
+    // тень
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath(); ctx.ellipse(crab.x, crab.y + 6, 44, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // ноги
+    ctx.strokeStyle = '#c9452c'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let i = 0; i < 3; i++) { leg(-14 + i * 4, 4, -1, i, crab.walk); leg(14 - i * 4, 4, 1, i, crab.walk); }
+
+    // клешни
+    const idleOpen = (Math.sin(t * 2.2) * 0.5 + 0.5) * 0.25;
+    const snapOpen = crab.snap > 0 ? Math.abs(Math.sin(crab.snap * 18)) : 0;
+    claw(-1, Math.max(idleOpen, snapOpen));
+    claw(1, Math.max(idleOpen * 0.8, snapOpen));
+
+    // стебельки глаз
+    const ex = crab.face * 4;
+    ctx.strokeStyle = '#d9502f'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(-8, -10); ctx.lineTo(-10 + ex, -26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8, -10); ctx.lineTo(10 + ex, -26); ctx.stroke();
+
+    // панцирь
+    const g = ctx.createRadialGradient(-8, -12, 4, 0, 0, 40);
+    g.addColorStop(0, '#ff9572'); g.addColorStop(0.6, '#ec5b3c'); g.addColorStop(1, '#b8382a');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(-34, 2);
+    ctx.quadraticCurveTo(-36, -20, 0, -22);
+    ctx.quadraticCurveTo(36, -20, 34, 2);
+    ctx.quadraticCurveTo(0, 16, -34, 2);
+    ctx.fill();
+    // крапинки
+    ctx.fillStyle = 'rgba(255,220,190,0.35)';
+    [[-16, -10, 3], [-4, -15, 2.2], [12, -12, 2.8], [22, -4, 2], [-24, -2, 2]].forEach(([a, b, r]) => {
+      ctx.beginPath(); ctx.arc(a, b, r, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // глаза
+    const blink = crab.blink > 0 ? 0.15 : 1;
+    [[-10 + ex, -28], [10 + ex, -28]].forEach(([a, b]) => {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(a, b, 5, 5 * blink, 0, 0, Math.PI * 2); ctx.fill();
+      if (blink > 0.5) {
+        ctx.fillStyle = '#10222a';
+        ctx.beginPath(); ctx.arc(a + crab.face * 1.5, b + 0.5, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(a + crab.face * 1.5 - 0.8, b - 0.8, 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+
+    // улыбка
+    ctx.strokeStyle = '#7a2218'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ex, -4, 7, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ---------- пузырьки ----------
+  function spawnBubble(x, y, r) {
+    bubbles.push({ x, y, r, vy: rand(30, 60) + r * 6, ph: rand(0, 6.28), amp: rand(4, 12) });
+  }
+
+  function updateBubbles(dt) {
+    for (const b of bubbles) {
+      b.y -= b.vy * dt * SPEED;
+      b.ph += dt * 3 * SPEED;
+      if (b.y < 20) b.pop = true;
+    }
+    bubbles = bubbles.filter(b => !b.pop);
+    if (bubbles.length > 400) bubbles.splice(0, bubbles.length - 400);
+  }
+
+  function drawBubbles() {
+    for (const b of bubbles) {
+      const x = b.x + Math.sin(b.ph) * b.amp;
+      ctx.strokeStyle = 'rgba(220,250,255,0.75)';
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = 'rgba(200,245,255,0.12)';
+      ctx.beginPath(); ctx.arc(x, b.y, b.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.arc(x - b.r * 0.35, b.y - b.r * 0.35, Math.max(0.8, b.r * 0.25), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // компрессор слева и ракушка-источник справа
+  function aerators() { return [{ x: W * 0.08, y: sandHeight(W * 0.08) }, { x: W * 0.74, y: sandHeight(W * 0.74) }]; }
+
+  // ---------- водоросли ----------
+  function drawWeed(w, t) {
+    const pts = [];
+    const segLen = w.len / w.segs;
+    let x = w.x, y = w.base, ang = -Math.PI / 2;
+    pts.push([x, y]);
+    for (let i = 1; i <= w.segs; i++) {
+      const k = i / w.segs;
+      ang = -Math.PI / 2 + Math.sin(t * w.speed * SPEED + w.phase + k * 2.4) * 0.22 * k
+        + Math.sin(t * 0.4 * SPEED + w.x * 0.01) * 0.12 * k;
+      x += Math.cos(ang) * segLen; y += Math.sin(ang) * segLen;
+      pts.push([x, y]);
+    }
+    const left = [], right = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[Math.min(i + 1, pts.length - 1)], o = pts[Math.max(i - 1, 0)];
+      const dx = q[0] - o[0], dy = q[1] - o[1], L = Math.hypot(dx, dy) || 1;
+      const nx = -dy / L, ny = dx / L;
+      const k = i / (pts.length - 1);
+      let wid = w.w * (1 - k * 0.85);
+      if (w.kind === 'kelp') wid *= 1 + Math.sin(k * 18) * 0.35;
+      left.push([p[0] + nx * wid, p[1] + ny * wid]);
+      right.push([p[0] - nx * wid, p[1] - ny * wid]);
+    }
+    const light = w.back ? 22 : 34;
+    const g = ctx.createLinearGradient(0, w.base, 0, w.base - w.len);
+    g.addColorStop(0, `hsl(${w.hue},55%,${light - 8}%)`);
+    g.addColorStop(1, `hsl(${w.hue + 15},60%,${light + 12}%)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(left[0][0], left[0][1]);
+    for (let i = 1; i < left.length; i++) ctx.lineTo(left[i][0], left[i][1]);
+    for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+    ctx.closePath();
+    ctx.fill();
+    // средняя жилка
+    ctx.strokeStyle = `hsla(${w.hue + 20},60%,${light + 20}%,0.35)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length - 2; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+  }
+
+  // ---------- рыбки ----------
+  function updateFish(dt, t) {
+    fish.forEach((f, i) => {
+      f.x += f.dir * f.v * dt * SPEED;
+      f.wob += dt * 6 * SPEED;
+      f.y += Math.sin(t * 0.7 + i) * 0.15 * SPEED;
+      if ((f.dir > 0 && f.x > W + 80) || (f.dir < 0 && f.x < -80)) fish[i] = makeFish(false);
+    });
+  }
+
+  function drawFish(f) {
+    const [h, s, l] = f.col;
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    ctx.scale(f.dir, 1);
+    const tail = Math.sin(f.wob) * 0.35;
+    ctx.fillStyle = `hsl(${h},${s}%,${l - 10}%)`;
+    ctx.save(); ctx.translate(-f.size * 0.9, 0); ctx.rotate(tail);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-f.size * 0.7, -f.size * 0.5); ctx.lineTo(-f.size * 0.7, f.size * 0.5); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = `hsl(${h},${s}%,${l}%)`;
+    ctx.beginPath(); ctx.ellipse(0, 0, f.size, f.size * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.ellipse(-f.size * 0.15, -f.size * 0.05, f.size * 0.12, f.size * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(f.size * 0.55, -f.size * 0.12, f.size * 0.14, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0c1a20';
+    ctx.beginPath(); ctx.arc(f.size * 0.6, -f.size * 0.12, f.size * 0.07, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ---------- фон ----------
+  function drawWater(t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#1d7f8c'); g.addColorStop(0.45, '#0e4f5f'); g.addColorStop(1, '#06202b');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    // лучи света
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {
+      const cx = W * (i + 0.5) / 6 + Math.sin(t * 0.25 * SPEED + i * 1.9) * 40;
+      const wTop = 30 + i % 3 * 18, wBot = 140 + (i % 2) * 90;
+      const lg = ctx.createLinearGradient(0, 0, 0, floorY);
+      const a = 0.05 + 0.03 * Math.sin(t * 0.6 * SPEED + i);
+      lg.addColorStop(0, `rgba(190,255,240,${a})`); lg.addColorStop(1, 'rgba(190,255,240,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(cx - wTop, 0); ctx.lineTo(cx + wTop, 0);
+      ctx.lineTo(cx + wBot + 60, floorY); ctx.lineTo(cx - wBot + 60, floorY);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+
+    // поверхность воды
+    ctx.strokeStyle = 'rgba(210,255,250,0.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 8) {
+      const y = 10 + Math.sin(x * 0.02 + t * 1.6 * SPEED) * 3 + Math.sin(x * 0.045 - t * SPEED) * 2;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function drawSand(t) {
+    const g = ctx.createLinearGradient(0, floorY - 20, 0, H);
+    g.addColorStop(0, '#d9b98a'); g.addColorStop(1, '#8a6a45');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 10) ctx.lineTo(x, sandHeight(x));
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+    // каустика на песке
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = '#fff6d8';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < W / 40; i++) {
+      const x = i * 40 + Math.sin(t * 0.8 * SPEED + i) * 10;
+      const y = sandHeight(x) + 10 + (i % 3) * 12;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 14 + Math.sin(t * SPEED + i) * 4, 3, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    for (const p of pebbles) { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function drawRocks() {
+    for (const r of rocks) {
+      const y = sandHeight(r.x) + 8;
+      ctx.fillStyle = `hsl(${r.hue},14%,${r.light}%)`;
+      ctx.beginPath();
+      r.pts.forEach((rad, k) => {
+        const a = Math.PI + (k / (r.pts.length - 1)) * Math.PI;
+        const px = r.x + Math.cos(a) * rad * 1.3, py = y + Math.sin(a) * rad;
+        k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      });
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath(); ctx.ellipse(r.x - r.r * 0.3, y - r.r * 0.6, r.r * 0.4, r.r * 0.18, -0.3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawAerators(t) {
+    const [a, s] = aerators();
+    // камень-распылитель
+    ctx.fillStyle = '#5c6f78';
+    ctx.beginPath(); ctx.ellipse(a.x, a.y + 2, 16, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7f949c';
+    ctx.beginPath(); ctx.ellipse(a.x - 3, a.y - 1, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+    // ракушка, которая открывается и выпускает пузырь
+    const open = Math.max(0, Math.sin(t * 0.8 * SPEED)) * 0.5;
+    ctx.save();
+    ctx.translate(s.x, s.y + 2);
+    ctx.fillStyle = '#e9c7b5';
+    ctx.beginPath(); ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI); ctx.fill();
+    ctx.save(); ctx.translate(-20, 0); ctx.rotate(-open);
+    ctx.fillStyle = '#f6dccd';
+    ctx.beginPath(); ctx.ellipse(20, 0, 22, 12, 0, Math.PI, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(160,110,90,0.6)'; ctx.lineWidth = 1;
+    for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(20 + k * 8, -11 + Math.abs(k) * 2); ctx.stroke(); }
+    ctx.restore();
+    if (open > 0.3) { ctx.fillStyle = '#fff8f0'; ctx.beginPath(); ctx.arc(0, -2, 4, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    return { a, s, open };
+  }
+
+  function drawGlass() {
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0.07)'); g.addColorStop(0.08, 'rgba(255,255,255,0)');
+    g.addColorStop(0.92, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0.05)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.moveTo(W * 0.62, 0); ctx.lineTo(W * 0.68, 0); ctx.lineTo(W * 0.5, H); ctx.lineTo(W * 0.47, H); ctx.closePath(); ctx.fill();
+  }
+
+  // ---------- цикл ----------
+  let last = performance.now(), aerAcc = 0, shellAcc = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const t = now / 1000;
+
+    updateCrab(dt, t);
+    updateFish(dt, t);
+    updateBubbles(dt);
+
+    aerAcc += dt * SPEED;
+    if (aerAcc > 0.09) {
+      aerAcc = 0;
+      const [a] = aerators();
+      spawnBubble(a.x + rand(-6, 6), a.y - 6, rand(2, 6));
+    }
+
+    drawWater(t);
+    weeds.filter(w => w.back).forEach(w => drawWeed(w, t));
+    fish.filter((_, i) => i % 2).forEach(drawFish);
+    drawSand(t);
+    drawRocks();
+    const { s, open } = drawAerators(t);
+    shellAcc += dt;
+    if (open > 0.45 && shellAcc > 1.2) { shellAcc = 0; spawnBubble(s.x, s.y - 8, rand(7, 11)); }
+    weeds.filter(w => !w.back).slice(0, Math.ceil(weeds.filter(w => !w.back).length / 2)).forEach(w => drawWeed(w, t));
+    drawCrab(t);
+    weeds.filter(w => !w.back).slice(Math.ceil(weeds.filter(w => !w.back).length / 2)).forEach(w => drawWeed(w, t));
+    fish.filter((_, i) => !(i % 2)).forEach(drawFish);
+    drawBubbles();
+    drawGlass();
+
+    requestAnimationFrame(frame);
+  }
+
+  cv.addEventListener('pointerdown', e => {
+    const r = cv.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (y > floorY - 40) {
+      crab.target = Math.min(W - 50, Math.max(50, x));
+      crab.pause = rand(2, 4);
+      crab.snap = 1;
+    } else {
+      for (let i = 0; i < 10; i++) spawnBubble(x + rand(-12, 12), y + rand(-8, 8), rand(2, 7));
+    }
+  });
+
+  window.addEventListener('resize', build);
+  crab.x = innerWidth * 0.45;
+  build();
+  requestAnimationFrame(frame);
+})();
+</script>
